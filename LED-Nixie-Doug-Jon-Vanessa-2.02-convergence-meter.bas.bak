@@ -288,13 +288,13 @@
     if g = 1 and s / 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
     s = IO.getrtc(1)  ' Minutes
     n = s % 10
-    p = 40
+    p = 50
     i = n - 1
     if i < 0 then i = 9
     gosub 400        ' Minutes 1
     if g = 1 and s % 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
     n = s / 10
-    p = 30
+    p = 40
     i = n - 1
     if i < 0 then i = 5
     gosub 400        ' Minutes 10
