@@ -148,9 +148,9 @@
     LED.blackout() ' turn off all LEDs
 '
 ' Version
-    LED.iled(2, 30 + read 10, 2)
-    LED.iled(2, 40 + read 10, 0)
     LED.iled(2, 50 + read 10, 2)
+    LED.iled(2, 60 + read 10, 0)
+    LED.iled(2, 70 + read 10, 2)
     LED.show()
     delay 2000
 '
@@ -224,7 +224,7 @@
     if i > 254 then i = 254 ' do not exceed max brightness
     if (IO.eeread(4)) = 0 then v = i else v = read 30, IO.eeread(4)' Set brightness from auto or EEPROM
 210:
-    LED.irange(0, 0, 59) ' Clear display
+    LED.irange(0, 0, 79) ' Clear display
     if m <> 0 then goto 220 ' If date mode, skip time display
     gosub 500      ' Show time - set LEDs
     LED.show()     ' Show time - show LEDs
@@ -288,13 +288,13 @@
     if g = 1 and s / 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
     s = IO.getrtc(1)  ' Minutes
     n = s % 10
-    p = 50
+    p = 40
     i = n - 1
     if i < 0 then i = 9
     gosub 400        ' Minutes 1
     if g = 1 and s % 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
     n = s / 10
-    p = 40
+    p = 30
     i = n - 1
     if i < 0 then i = 5
     gosub 400        ' Minutes 10
@@ -414,7 +414,7 @@
 1020:
     if t <> 1002 then goto 1030 ' position 12 = multi-colour
     LED.ihsv(1, h, 255, v - b)
-    h = (p * 6 + z) % 360 ' set "standard 1" as 6* position + counter mod 360
+    h = (p * 8 + z) % 360 ' set "standard 1" as 8* position + counter mod 360
     goto 1090
 1030:
     if t <> 1003 then goto 1040 ' position 13 = gently cycling
@@ -447,7 +447,7 @@
 3000: ' pixels turning off and on at random, random colours
      for n = 1 to 300
         r = random % 360 ' colour
-        a = random % 60  ' position
+        a = random % 80  ' position
         led.lhsv(a, r, 255, v)    ' set colour
         if a - 1 >= 0 then LED.iled(0, a - 1) ' turn off pixel below current
         led.show()
@@ -531,7 +531,7 @@
     next z
     return
 '............................................................
-3700: ' cycling through all LEDs 0-59 in increasing colours
+3700: ' cycling through all LEDs 0-79 in increasing colours
     LED.blackout()
     g = 0 'Test variable, to exit routine
 3701: 'Pixel counter index
@@ -542,7 +542,7 @@
     data 45, 40, 46, 41, 47, 42, 48, 43, 49, 44,
     data 55, 50, 56, 51, 57, 52, 58, 53, 59, 54,
 3702: 'Main loop
-    for i = 1 to 59
+    for i = 1 to 79
      led.ihsv(1,((i + g) * 7) % 360,255,v)
      LED.iled(1,read 3701,i)
      LED.show()
