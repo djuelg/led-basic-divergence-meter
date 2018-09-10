@@ -326,24 +326,24 @@
 600:
     s = IO.getrtc(3)  'day
     n = s / 10
-    p = (IO.eeread(16)) * 20 ' Ddmmyy, mmDdyy, yymmDd (IO.eeread(16))=0,1,2
+    p = (IO.eeread(16)) * 30 ' Ddmmyy, mmDdyy, yymmDd (IO.eeread(16))=0,1,2
     gosub 1000        ' Day 10s
     n = s % 10
-    p = (IO.eeread(16)) * 20 + 10 ' dDmmyy, mmdDyy, yymmdD (IO.eeread(16))=0,1,2
+    p = (IO.eeread(16)) * 30 + 10 ' dDmmyy, mmdDyy, yymmdD (IO.eeread(16))=0,1,2
     gosub 1000        ' Day units
     s = IO.getrtc(4)  'month
     n = s / 10
-    if (IO.eeread(16)) = 1 then p = 0 else p = 20 ' Mmddyy, ddMmyy / yyMmdd
+    if (IO.eeread(16)) = 1 then p = 0 else p = 30 ' Mmddyy, ddMmyy / yyMmdd
     gosub 1000        ' Month 10s
     n = s % 10
-    if (IO.eeread(16)) = 1 then p = 10 else p = 30 ' mMddyy, ddmMyy / yymMdd
+    if (IO.eeread(16)) = 1 then p = 10 else p = 40 ' mMddyy, ddmMyy / yymMdd
     gosub 1000        ' Month units
     s = IO.getrtc(5)  ' year
     n = (s % 100) / 10 ' 2 digit year
-    if (IO.eeread(16)) = 2 then p = 0 else p = 40 ' Yymmdd, ddmmYy / mmddYy
+    if (IO.eeread(16)) = 2 then p = 0 else p = 60 ' Yymmdd, ddmmYy / mmddYy
     gosub 1000        ' Year 10s
     n = s % 10
-    if (IO.eeread(16)) = 2 then p = 10 else p = 50 ' yYmmdd, ddmmyY/mmddyY
+    if (IO.eeread(16)) = 2 then p = 10 else p = 70 ' yYmmdd, ddmmyY/mmddyY
     gosub 1000        ' Year units
     z = z + 1
     return
@@ -433,14 +433,14 @@
 2900:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then goto 100 ' alarm ringing so abort
     i = random ' choose one of animations at random
-    if i <= 4096 then gosub 3000 ' party mode effect 0
-    if i > 4096 and i <= 8192 then gosub 3100 ' party mode effect 1
-    if i > 8192 and i <= 12288 then gosub 3200 ' party mode effect 2
-    if i > 12288 and i <= 16384 then gosub 3300 ' party mode effect 3
-    if i > 16484 and i <= 20480 then gosub 3400 ' party mode effect 4
-    if i > 20480 and i <= 24576 then gosub 3500 ' party mode effect 5
-    if i > 24576 and i <= 28672 then gosub 3600 ' party mode effect 6
-    if i > 28672 then gosub 3700 ' party mode effect 7
+    gosub 3000 ' party mode effect 0
+    gosub 3100 ' party mode effect 1
+    gosub 3200 ' party mode effect 2
+    gosub 3300 ' party mode effect 3
+    gosub 3400 ' party mode effect 4
+    gosub 3500 ' party mode effect 5
+    gosub 3600 ' party mode effect 6
+    gosub 3700 ' party mode effect 7
     k = IO.getkey() ' key reset if pressed during Party
     goto 100 ' main loop
 '............................................................
@@ -456,15 +456,15 @@
      return
 '............................................................
 3100: ' two pixels of two random colours cycling and crossing each other
-    for n = 1 to 3
+    for n = 1 to 2
 3110:
     a = Random % 360
     r = Random % 360
     if a = r then goto 3110
-        for i = 0 to 60
+        for i = 0 to 80
             LED.iall(0)
             led.lhsv(i, a, 255, v)       ' Colour
-            led.lhsv(60 - i, r, 255, v) ' Colour
+            led.lhsv(80 - i, r, 255, v) ' Colour
            led.show()
            delay 80
         next i
@@ -478,10 +478,10 @@
     z = Random % 360
     for i = 0 to 249
         LED.iall(0)
-        led.lhsv(i % 60, z, 255, v)
-        led.lhsv(60 - ((i + 1) % 60), a, 255, v)
-        led.lhsv((i + 9) % 60, r, 255, v)
-        led.lhsv(60 - ((i + 10) % 60), n, 255, v)
+        led.lhsv(i % 80, z, 255, v)
+        led.lhsv(80 - ((i + 1) % 80), a, 255, v)
+        led.lhsv((i + 9) % 80, r, 255, v)
+        led.lhsv(80 - ((i + 10) % 80), n, 255, v)
         led.show()
         delay 80
     next i
@@ -491,7 +491,7 @@
     LED.iall(0)
     z = Random % 360
     for n = 0 to 5
-      for i = 60 downto 0
+      for i = 80 downto 0
       if n % 2 = 0 then led.lhsv(i, (z + n * i) % 360, 255, v) else led.lhsv(60 - i,(z + n * i) % 360, 255, v)
       led.show()
       next i
@@ -501,7 +501,7 @@
 3400: ' "turbulent" rainbow over all pixels, speeding up
     h = random % 360
     for i = 1 to 500
-    LED.rainbow(h, 255, v, 0, 60, 3)
+    LED.rainbow(h, 255, v, 0, 80, 3)
     LED.show()
     h = (h + i / 10) % 360
     next i
@@ -560,6 +560,14 @@
     for i = 1 to 100
      LED.irange(0, 0, 79) ' blank
      s = random
+
+     n = ((s % 1000)/100) + 1
+     p = 70
+     gosub 1000        ' 10s Seconds
+     n = (s % 10000)/1000
+     p = 60
+     gosub 1000        ' Seconds 1s
+
      n = s % 10 ' random number between 0 and 9
      p = 40
      gosub 1000        ' 10s Seconds
@@ -649,7 +657,7 @@
     if (IO.eeread(3)) = 0 then goto 9110 ' no beep if set silent
 9105: ' actual beep
     IO.beep(35)
-    delay 25
+    delay 250
     IO.beep(0)
 9110:
     return

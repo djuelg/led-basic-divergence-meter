@@ -461,10 +461,10 @@
     a = Random % 360
     r = Random % 360
     if a = r then goto 3110
-        for i = 0 to 60
+        for i = 0 to 80
             LED.iall(0)
             led.lhsv(i, a, 255, v)       ' Colour
-            led.lhsv(60 - i, r, 255, v) ' Colour
+            led.lhsv(80 - i, r, 255, v) ' Colour
            led.show()
            delay 80
         next i
@@ -478,10 +478,10 @@
     z = Random % 360
     for i = 0 to 249
         LED.iall(0)
-        led.lhsv(i % 60, z, 255, v)
-        led.lhsv(60 - ((i + 1) % 60), a, 255, v)
-        led.lhsv((i + 9) % 60, r, 255, v)
-        led.lhsv(60 - ((i + 10) % 60), n, 255, v)
+        led.lhsv(i % 80, z, 255, v)
+        led.lhsv(80 - ((i + 1) % 80), a, 255, v)
+        led.lhsv((i + 9) % 80, r, 255, v)
+        led.lhsv(80 - ((i + 10) % 80), n, 255, v)
         led.show()
         delay 80
     next i
@@ -491,7 +491,7 @@
     LED.iall(0)
     z = Random % 360
     for n = 0 to 5
-      for i = 60 downto 0
+      for i = 80 downto 0
       if n % 2 = 0 then led.lhsv(i, (z + n * i) % 360, 255, v) else led.lhsv(60 - i,(z + n * i) % 360, 255, v)
       led.show()
       next i
@@ -501,7 +501,7 @@
 3400: ' "turbulent" rainbow over all pixels, speeding up
     h = random % 360
     for i = 1 to 500
-    LED.rainbow(h, 255, v, 0, 60, 3)
+    LED.rainbow(h, 255, v, 0, 80, 3)
     LED.show()
     h = (h + i / 10) % 360
     next i
@@ -560,6 +560,14 @@
     for i = 1 to 100
      LED.irange(0, 0, 79) ' blank
      s = random
+
+     n = ((s % 1000)/100) + 1
+     p = 70
+     gosub 1000        ' 10s Seconds
+     n = (s % 10000)/1000
+     p = 60
+     gosub 1000        ' Seconds 1s
+
      n = s % 10 ' random number between 0 and 9
      p = 40
      gosub 1000        ' 10s Seconds
@@ -649,7 +657,7 @@
     if (IO.eeread(3)) = 0 then goto 9110 ' no beep if set silent
 9105: ' actual beep
     IO.beep(35)
-    delay 25
+    delay 250
     IO.beep(0)
 9110:
     return
