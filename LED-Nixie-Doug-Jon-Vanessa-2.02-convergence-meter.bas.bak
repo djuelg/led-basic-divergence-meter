@@ -173,7 +173,7 @@
     b = 0  ' brightness subtraction
     l = 0  ' Transition brightness
     u = 11 ' Last second shown
-    j = 59 ' Initial LED location for seconds flip
+    j = 79 ' Initial LED location for seconds flip
     m = 0  ' Initially in time display
     x = 0  ' Alarm not silenced
     goto 190
@@ -273,7 +273,7 @@
     i = n - 1
     if i < 0 then i = 5
     gosub 400        ' display seconds 10s
-    j = 59
+    j = 79
     goto 520          ' to minutes
 510:
     n = s / 10        ' Seconds Flip routine
@@ -352,7 +352,7 @@
 ' VAR: n, p, s, i
 700:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm ringing so don't display alarm time
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0,79)
     s = IO.eeread(6)
     for i = 50 downto 10 step 10
      LED.iled(3, i + read 10, s / 10)
@@ -541,6 +541,8 @@
     data 35, 30, 36, 31, 37, 32, 38, 33, 39, 34,
     data 45, 40, 46, 41, 47, 42, 48, 43, 49, 44,
     data 55, 50, 56, 51, 57, 52, 58, 53, 59, 54,
+    data 65, 60, 66, 61, 67, 62, 68, 63, 69, 64,
+    data 75, 70, 76, 71, 77, 72, 78, 73, 79, 74,
 3702: 'Main loop
     for i = 1 to 79
      led.ihsv(1,((i + g) * 7) % 360,255,v)
@@ -556,7 +558,7 @@
 4000:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm sounding so quit
     for i = 1 to 100
-     LED.irange(0, 0, 59) ' blank
+     LED.irange(0, 0, 79) ' blank
      s = random
      n = s % 10 ' random number between 0 and 9
      p = 40
@@ -672,7 +674,7 @@
     gosub 9100         ' BEEP. K = 2 so long press so exit
     goto 99            ' long press so exit
 10050:
-    LED.irange(0, 0, 59) ' blank all the pixels
+    LED.irange(0, 0, 79) ' blank all the pixels
     if z & 15 < 11 then LED.iled(2, read 10, p) ' White first pixel number flashes.
     LED.show()
     z = z + 1
@@ -711,7 +713,7 @@
     gosub 9100         ' BEEP
     goto 99            ' long press so exit
 10150:
-    LED.irange(0, 0, 59) ' blank out pixels
+    LED.irange(0, 0, 79) ' blank out pixels
     if z & 15 < 11 then LED.iled(6, read 10, p) ' Blue menu option Flashing
     LED.show()
     z = z + 1
@@ -749,7 +751,7 @@
     gosub 9100        ' BEEP
     goto  11070       ' short press
 11050:
-    LED.irange(0, 0, 59) ' blank everything
+    LED.irange(0, 0, 79) ' blank everything
     if z & 15 > 10 then goto 11060 ' (flashing)
     LED.iled(2, 40 + read 10, y / 10) ' brightness display 10s
     LED.iled(2, 50 + read 10, y % 10) ' brightness units
@@ -782,7 +784,7 @@
     gosub 9100        ' BEEP
     goto  11170       ' short click I assume
 11150:
-    LED.irange(0, 0, 59) ' blank display
+    LED.irange(0, 0, 79) ' blank display
     if z & 15 > 10 then goto 11160 ' light pixels only 10 in 15 cycles'
     LED.iled(2, 30 + read 10, y / 100) ' light setting 100s
     LED.iled(2, 40 + read 10, (y / 10) % 10)  ' light setting 10s
@@ -816,7 +818,7 @@
     gosub 9100        ' BEEP, short press one assumes
     goto  11270
 11250:
-    LED.irange(0, 0, 59) ' blank out LEDs
+    LED.irange(0, 0, 79) ' blank out LEDs
     if z & 15 > 10 then goto 11260 ' light pixels for 10 in 15 cycles
     t = y
     LED.iled(2, 40 + read 10, t / 10) ' min brightness 10s
@@ -850,7 +852,7 @@
     gosub 9100        ' BEEP short press
     goto  12070
 12050:
-    LED.irange(0, 0, 59) ' black out LEDs
+    LED.irange(0, 0, 79) ' black out LEDs
     if z & 15 > 10 then goto 12060 ' light pixel for 10 / 15 cycles (flash)
     LED.iled(2, 50 + read 10, y)
 12060:
@@ -882,7 +884,7 @@
     gosub 9100        ' BEEP short press
     goto  12170
 12150:
-    LED.irange(0, 0, 59) ' blank pixels
+    LED.irange(0, 0, 79) ' blank pixels
     if z & 15 > 10 then goto 12160 'light pixels 10 cycles in 15
     LED.iled(2, 50 + read 10, y)
 12160:
@@ -914,7 +916,7 @@
     gosub 9100        ' BEEP key pressed
     goto  12270
 12250:
-    LED.irange(0, 0, 59) ' black out LEDs
+    LED.irange(0, 0, 79) ' black out LEDs
     if z & 15 > 10 then goto 12260 ' light LEDs 10 in 15 cycles
     LED.iled(2, 50 + read 10, y)
 12260:
@@ -946,7 +948,7 @@
     gosub 9100        ' BEEP key pressed
     goto  12470
 12450:
-    LED.irange(0, 0, 59) ' blank LEDs
+    LED.irange(0, 0, 79) ' blank LEDs
     if z & 15 > 10 then goto 12460
     t = y + 1 '1 if 12 hour, 2 if 24 hour
     LED.iled(2, 40 + read 10, t) ' 1 or 2
@@ -980,7 +982,7 @@
     gosub 9100        ' BEEP, key
     goto  12570
 12550:
-    LED.irange(0, 0, 59) ' blank LEDs
+    LED.irange(0, 0, 79) ' blank LEDs
     if z & 15 > 10 then goto 12560 ' light pixel 10 out of 15 cycles
     LED.iled(2, 50 + read 10, y)
 12560:
@@ -1012,7 +1014,7 @@
     gosub 9100        ' BEEP, key
     goto  12670
 12650:
-    LED.irange(0, 0, 59) ' blank LEDs
+    LED.irange(0, 0, 79) ' blank LEDs
     if z & 15 > 10 then goto 12660 ' light pixel 10 out of 15 cycles
     LED.iled(2, 50 + read 10, y)
 12660:
@@ -1045,7 +1047,7 @@
     if k = 1 then goto 13100 ' short press > minutes
     if k = 2 then goto 13300 ' long press > save, exit
 13050: ' no key pressed
-    LED.irange(0, 0, 59) ' blank out LEDs
+    LED.irange(0, 0, 79) ' blank out LEDs
     if z & 15 > 10 then goto 13060 ' only light 1st 2 pixels 10 / 15 cycles
     LED.iled(2,      read 10, y / 10) ' hours 10s, white
     LED.iled(2, 10 + read 10, y % 10) ' hours units, white
@@ -1073,7 +1075,7 @@
     if k = 1 then goto 13200 ' short press > seconds
     if k = 2 then goto 13300 ' long press > save, exit
 13150:
-    LED.irange(0, 0, 59) ' blank out
+    LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 13160 ' only show minutes 10 / 15 cycles
     LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
     LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
@@ -1101,7 +1103,7 @@
     if k = 1 then goto 13005 ' short click > hours
     if k = 2 then goto 13300 ' long click > save, exit
 13250:
-    LED.irange(0, 0, 59) ' blank out
+    LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 13260 ' only light seconds 10 / 15 cycles
     LED.iled(2, 40 + read 10, (w * 5) / 10) ' seconds 10s white
     LED.iled(2, 50 + read 10, (w * 5) % 10) ' seconds units white
@@ -1144,7 +1146,7 @@
     if k = 1 then goto 14100 ' short push, go to month
     if k = 2 then goto 14300 ' long push, save and exit
 14050: ' flashing LEDs
-    LED.irange(0, 0, 59) ' blank out LEDs
+    LED.irange(0, 0, 79) ' blank out LEDs
     if z & 15 > 10 then goto 14060 ' show LEDs in 10 out of every 15 cycles (flash)
     r = (IO.eeread(16)) * 20' day position depending on date format
     LED.iled(2, r + read 10, (y + 1) / 10) ' days 10s
@@ -1175,7 +1177,7 @@
     if k = 1 then goto 14200 ' short press > years
     if k = 2 then goto 14300
 14150:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 14160
     if (IO.eeread(16)) = 1 then r = 0 else r = 20
     LED.iled(2, r + read 10, (x + 1) / 10) ' months 10s depending on date format
@@ -1206,7 +1208,7 @@
     if k = 1 then goto 14005 ' short press = back to days
     if k = 2 then goto 14300 ' long press = save and exit
 14250:
-    LED.irange(0, 0, 59) ' blank out
+    LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 14260 ' display 10 cycles out of 15 (flash)
     if (IO.eeread(16)) = 2 then r = 0 else r = 40 ' year position depending on format
     LED.iled(2, r + read 10, w / 10)
@@ -1264,7 +1266,7 @@
     gosub 9100        ' BEEP
     goto  15070
 15050:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 15060
     LED.iled(2, 50 + read 10, y)
 15060:
@@ -1296,7 +1298,7 @@
     gosub 9100        ' BEEP
     goto  15170       ' short press
 15150:
-    LED.irange(0, 0, 59) ' blank everything
+    LED.irange(0, 0, 79) ' blank everything
     if z & 15 > 10 then goto 15160 ' (flashing)
     LED.iled(2, 50 + read 10, y) ' fade units
 15160:
@@ -1329,7 +1331,7 @@
     if k = 1 then goto 16100
     if k = 2 then goto 16300
 16050:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 16060
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
@@ -1357,7 +1359,7 @@
     if k = 1 then goto 16005
     if k = 2 then goto 16300
 16150:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 16160
     LED.iled(2, 20 + read 10, x / 10)
     LED.iled(2, 30 + read 10, x % 10)
@@ -1398,7 +1400,7 @@
     gosub 9100        ' BEEP
     goto  17070
 17050:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 17060
     LED.iled(2, 50 + read 10, y)
 17060:
@@ -1431,7 +1433,7 @@
     if k = 1 then goto 18100
     if k = 2 then goto 18300
 18050:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 18060
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
@@ -1459,7 +1461,7 @@
     if k = 1 then goto 18005
     if k = 2 then goto 18300
 18150:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 18160
     LED.iled(2, 20 + read 10, x / 10)
     LED.iled(2, 30 + read 10, x % 10)
@@ -1488,7 +1490,7 @@
     if a = 2 goto 99     ' alarm prio
     s = IO.getrtc(0)
     if s = t then goto 18205
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
     LED.iled(4, 20 + read 10, x / 10)
@@ -1512,7 +1514,7 @@
 18230:
     n = 0
 18240:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     LED.show()
 18241:
     t = read 40, n
@@ -1529,7 +1531,7 @@
     IO.beep(t)
     delay d
     IO.beep(0)
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     LED.show()
     delay 100
     goto 18241
@@ -1567,7 +1569,7 @@
     y = 0  ' Stopwatch Hour = 0
     x = 0  ' Stopwatch Minute = 0
     w = 0  ' Stopwatch Second = 0
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10) ' hours 10s
     LED.iled(4, 10 + read 10, y % 10) ' hours 1s
     LED.iled(4, 20 + read 10, x / 10) ' minutes 10s
@@ -1592,7 +1594,7 @@
     if a = 2 goto 99 ' alarm prio
     s = IO.getrtc(0)
     if s = t then goto 19205
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
     LED.iled(4, 20 + read 10, x / 10)
@@ -1659,7 +1661,7 @@
     gosub 9100        ' BEEP
     goto  20070
 20050:
-    LED.irange(0, 0, 59)
+    LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 20060
     LED.iled(2, 50 + read 10, y)
 20060:

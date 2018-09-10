@@ -326,24 +326,24 @@
 600:
     s = IO.getrtc(3)  'day
     n = s / 10
-    p = (IO.eeread(16)) * 20 ' Ddmmyy, mmDdyy, yymmDd (IO.eeread(16))=0,1,2
+    p = (IO.eeread(16)) * 30 ' Ddmmyy, mmDdyy, yymmDd (IO.eeread(16))=0,1,2
     gosub 1000        ' Day 10s
     n = s % 10
-    p = (IO.eeread(16)) * 20 + 10 ' dDmmyy, mmdDyy, yymmdD (IO.eeread(16))=0,1,2
+    p = (IO.eeread(16)) * 30 + 10 ' dDmmyy, mmdDyy, yymmdD (IO.eeread(16))=0,1,2
     gosub 1000        ' Day units
     s = IO.getrtc(4)  'month
     n = s / 10
-    if (IO.eeread(16)) = 1 then p = 0 else p = 20 ' Mmddyy, ddMmyy / yyMmdd
+    if (IO.eeread(16)) = 1 then p = 0 else p = 30 ' Mmddyy, ddMmyy / yyMmdd
     gosub 1000        ' Month 10s
     n = s % 10
-    if (IO.eeread(16)) = 1 then p = 10 else p = 30 ' mMddyy, ddmMyy / yymMdd
+    if (IO.eeread(16)) = 1 then p = 10 else p = 40 ' mMddyy, ddmMyy / yymMdd
     gosub 1000        ' Month units
     s = IO.getrtc(5)  ' year
     n = (s % 100) / 10 ' 2 digit year
-    if (IO.eeread(16)) = 2 then p = 0 else p = 40 ' Yymmdd, ddmmYy / mmddYy
+    if (IO.eeread(16)) = 2 then p = 0 else p = 60 ' Yymmdd, ddmmYy / mmddYy
     gosub 1000        ' Year 10s
     n = s % 10
-    if (IO.eeread(16)) = 2 then p = 10 else p = 50 ' yYmmdd, ddmmyY/mmddyY
+    if (IO.eeread(16)) = 2 then p = 10 else p = 70 ' yYmmdd, ddmmyY/mmddyY
     gosub 1000        ' Year units
     z = z + 1
     return
