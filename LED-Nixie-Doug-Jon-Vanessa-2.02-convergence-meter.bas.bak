@@ -193,6 +193,7 @@
     if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
     if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
     if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and r = 2 gosub 700 ' show alarm time
+    if s % 10 = 1 or s % 10 = 2 or s % 10 = 3 or s % 10 = 4 or s % 10 = 5 goto 700
 108:
     gosub 9000         ' Get key. 0 = none 1 = short press 2 = long press
     if k = 0 then goto 200 ' do nothing
@@ -354,14 +355,14 @@
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm ringing so don't display alarm time
     LED.irange(0, 0,79)
     s = IO.eeread(6)
-    for i = 50 downto 10 step 10
+    for i = 70 downto 10 step 10
      LED.iled(3, i + read 10, s / 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s / 10)
     next i
     LED.iled(3,     read 10, s / 10)
-    for i = 50 downto 20 step 10
+    for i = 70 downto 20 step 10
      LED.iled(3, i + read 10, s % 10)
      LED.show() ' display
      delay 200 ' cycle 1/5 second
@@ -369,30 +370,30 @@
     next i
     LED.iled(3, 10 + read 10, s % 10)
     s = IO.eeread(7)  ' alarm minutes
-    for i = 50 downto 30 step 10
+    for i = 70 downto 30 step 10
      LED.iled(3, i + read 10, s / 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s / 10)
     next i
-    LED.iled(3,20 + read 10, s / 10)
-    for i = 50 downto 40 step 10
+    LED.iled(3,30 + read 10, s / 10)
+    for i = 70 downto 40 step 10
      LED.iled(3, i + read 10, s % 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s % 10)
     next i
-    LED.iled(3, 30 + read 10, s % 10)
+    LED.iled(3, 40 + read 10, s % 10)
     LED.show()
     delay 200
-    LED.iled(3, 50 + read 10,0)
+    LED.iled(3, 70 + read 10,0)
     LED.show()
     delay 200
-    LED.iled(0, 50 + read 10,0)
-    LED.iled(3, 40 + read 10,0)
+    LED.iled(0, 70 + read 10,0)
+    LED.iled(3, 60 + read 10,0)
     LED.show()
     delay 200
-    LED.iled(3, 50 + read 10,0)
+    LED.iled(3, 70 + read 10,0)
     LED.show()
     delay 1500
     return
@@ -433,14 +434,14 @@
 2900:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then goto 100 ' alarm ringing so abort
     i = random ' choose one of animations at random
-    gosub 3000 ' party mode effect 0
-    gosub 3100 ' party mode effect 1
-    gosub 3200 ' party mode effect 2
-    gosub 3300 ' party mode effect 3
-    gosub 3400 ' party mode effect 4
-    gosub 3500 ' party mode effect 5
-    gosub 3600 ' party mode effect 6
-    gosub 3700 ' party mode effect 7
+    if i <= 4096 then gosub 3000 ' party mode effect 0
+    if i > 4096 and i <= 8192 then gosub 3100 ' party mode effect 1
+    if i > 8192 and i <= 12288 then gosub 3200 ' party mode effect 2
+    if i > 12288 and i <= 16384 then gosub 3300 ' party mode effect 3
+    if i > 16484 and i <= 20480 then gosub 3400 ' party mode effect 4
+    if i > 20480 and i <= 24576 then gosub 3500 ' party mode effect 5
+    if i > 24576 and i <= 28672 then gosub 3600 ' party mode effect 6
+    if i > 28672 then gosub 3700 ' party mode effect 7
     k = IO.getkey() ' key reset if pressed during Party
     goto 100 ' main loop
 '............................................................
@@ -456,7 +457,7 @@
      return
 '............................................................
 3100: ' two pixels of two random colours cycling and crossing each other
-    for n = 1 to 2
+    for n = 1 to 3
 3110:
     a = Random % 360
     r = Random % 360

@@ -354,14 +354,14 @@
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm ringing so don't display alarm time
     LED.irange(0, 0,79)
     s = IO.eeread(6)
-    for i = 50 downto 10 step 10
+    for i = 70 downto 10 step 10
      LED.iled(3, i + read 10, s / 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s / 10)
     next i
     LED.iled(3,     read 10, s / 10)
-    for i = 50 downto 20 step 10
+    for i = 70 downto 20 step 10
      LED.iled(3, i + read 10, s % 10)
      LED.show() ' display
      delay 200 ' cycle 1/5 second
@@ -369,30 +369,30 @@
     next i
     LED.iled(3, 10 + read 10, s % 10)
     s = IO.eeread(7)  ' alarm minutes
-    for i = 50 downto 30 step 10
+    for i = 70 downto 30 step 10
      LED.iled(3, i + read 10, s / 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s / 10)
     next i
-    LED.iled(3,20 + read 10, s / 10)
-    for i = 50 downto 40 step 10
+    LED.iled(3,30 + read 10, s / 10)
+    for i = 70 downto 40 step 10
      LED.iled(3, i + read 10, s % 10)
      LED.show()
      delay 200
      LED.iled(0, i + read 10, s % 10)
     next i
-    LED.iled(3, 30 + read 10, s % 10)
+    LED.iled(3, 40 + read 10, s % 10)
     LED.show()
     delay 200
-    LED.iled(3, 50 + read 10,0)
+    LED.iled(3, 70 + read 10,0)
     LED.show()
     delay 200
-    LED.iled(0, 50 + read 10,0)
-    LED.iled(3, 40 + read 10,0)
+    LED.iled(0, 70 + read 10,0)
+    LED.iled(3, 60 + read 10,0)
     LED.show()
     delay 200
-    LED.iled(3, 50 + read 10,0)
+    LED.iled(3, 70 + read 10,0)
     LED.show()
     delay 1500
     return
