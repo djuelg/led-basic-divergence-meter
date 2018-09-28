@@ -117,7 +117,7 @@
 '    IO.eewrite(11, 1)            ' 11 = Time Offset +/-  (1)
 '    IO.eewrite(12, 2)            ' 12 = Min Auto Bright  (2)
 '    IO.eewrite(13, 0)            ' 13 = Slot Machine     (0)
-'    IO.eewrite(14, 1)            ' 14 = 24 Hour Clock    (1)
+'    IO.eewrite(14, 1)            ' 14 = 24 Hour Clock(1)
 '    IO.eewrite(15, 0)            ' 15 = Seconds flip     (0)
 '    IO.eewrite(16, 0)            ' 16 = Date format      (0)
 '    IO.eewrite(17, 3)            ' 17 = Digits fade      (3)
@@ -1060,10 +1060,10 @@
     LED.iled(2,      read 10, y / 10) ' hours 10s, white
     LED.iled(2, 10 + read 10, y % 10) ' hours units, white
 13060:
-    LED.iled(5, 20 + read 10, x / 10) ' minutes 10s, yellow
-    LED.iled(5, 30 + read 10, x % 10) ' minutes units, yellow
-    LED.iled(5, 40 + read 10, (w * 5) / 10) ' seconds 10s, yellow
-    LED.iled(5, 50 + read 10, (w * 5) % 10) ' seconds units, yellow
+    LED.iled(5, 30 + read 10, x / 10) ' minutes 10s, yellow
+    LED.iled(5, 40 + read 10, x % 10) ' minutes units, yellow
+    LED.iled(5, 60 + read 10, (w * 5) / 10) ' seconds 10s, yellow
+    LED.iled(5, 70 + read 10, (w * 5) % 10) ' seconds units, yellow
     LED.show()
     z = z + 1
     if z <= 500 then goto 13010    ' time out
@@ -1085,13 +1085,13 @@
 13150:
     LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 13160 ' only show minutes 10 / 15 cycles
-    LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
-    LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
+    LED.iled(2, 30 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 40 + read 10, x % 10) ' minutes, units, white
 13160:
     LED.iled(5,      read 10, y / 10) ' hours, 10s, yellow, constant
     LED.iled(5, 10 + read 10, y % 10) ' hours, units, yellow, constant
-    LED.iled(5, 40 + read 10, (w * 5) / 10) 'seconds, 10s, yellow, constant
-    LED.iled(5, 50 + read 10, (w * 5) % 10) 'seconds, units, yellow, constant
+    LED.iled(5, 60 + read 10, (w * 5) / 10) 'seconds, 10s, yellow, constant
+    LED.iled(5, 70 + read 10, (w * 5) % 10) 'seconds, units, yellow, constant
     LED.show()
     z = z + 1
     if z <= 500 then goto 13110    ' timeout
@@ -1113,13 +1113,13 @@
 13250:
     LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 13260 ' only light seconds 10 / 15 cycles
-    LED.iled(2, 40 + read 10, (w * 5) / 10) ' seconds 10s white
-    LED.iled(2, 50 + read 10, (w * 5) % 10) ' seconds units white
+    LED.iled(2, 60 + read 10, (w * 5) / 10) ' seconds 10s white
+    LED.iled(2, 70 + read 10, (w * 5) % 10) ' seconds units white
 13260:
     LED.iled(5,      read 10, y / 10) ' hours 10s yellow constant
     LED.iled(5, 10 + read 10, y % 10) ' hours units yellow constant
-    LED.iled(5, 20 + read 10, x / 10) ' minutes 10s yellow constant
-    LED.iled(5, 30 + read 10, x % 10) ' minutes units yellow constant
+    LED.iled(5, 30 + read 10, x / 10) ' minutes 10s yellow constant
+    LED.iled(5, 40 + read 10, x % 10) ' minutes units yellow constant
     LED.show()
     z = z + 1
     if z <= 500 then goto 13210    ' time out
@@ -1156,14 +1156,14 @@
 14050: ' flashing LEDs
     LED.irange(0, 0, 79) ' blank out LEDs
     if z & 15 > 10 then goto 14060 ' show LEDs in 10 out of every 15 cycles (flash)
-    r = (IO.eeread(16)) * 20' day position depending on date format
+    r = (IO.eeread(16)) * 30' day position depending on date format
     LED.iled(2, r + read 10, (y + 1) / 10) ' days 10s
     LED.iled(2, r + 10 + read 10, (y + 1) % 10) ' days units
 14060: ' static LEDs
-    if (IO.eeread(16)) = 1 then r = 0 else r = 20  ' month position depending on format
+    if (IO.eeread(16)) = 1 then r = 0 else r = 30  ' month position depending on format
     LED.iled(5, r + read 10, (x + 1) / 10) ' month 10s
     LED.iled(5, r + 10 + read 10, (x + 1) % 10) ' month units
-    if (IO.eeread(16)) = 2 then r = 0 else r = 40 ' year position depending on format
+    if (IO.eeread(16)) = 2 then r = 0 else r = 60 ' year position depending on format
     LED.iled(5, r + read 10, w / 10) ' year tens
     LED.iled(5, r + 10 + read 10, w % 10) ' years units
     LED.show()
@@ -1187,14 +1187,14 @@
 14150:
     LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 14160
-    if (IO.eeread(16)) = 1 then r = 0 else r = 20
+    if (IO.eeread(16)) = 1 then r = 0 else r = 30
     LED.iled(2, r + read 10, (x + 1) / 10) ' months 10s depending on date format
     LED.iled(2, r + 10 + read 10, (x + 1) % 10) ' months units  depending on date format
 14160:
-    r = (IO.eeread(16)) * 20' day position depending on date format
+    r = (IO.eeread(16)) * 30' day position depending on date format
     LED.iled(5, r + read 10, (y + 1) / 10) ' day 10s
     LED.iled(5, r + 10 + read 10, (y + 1) % 10) ' day units
-    if (IO.eeread(16)) = 2 then r = 0 else r = 40 ' year position depending on format
+    if (IO.eeread(16)) = 2 then r = 0 else r = 60 ' year position depending on format
     LED.iled(5, r + read 10, w / 10)
     LED.iled(5, r + 10 + read 10, w % 10)
     LED.show()
@@ -1218,14 +1218,14 @@
 14250:
     LED.irange(0, 0, 79) ' blank out
     if z & 15 > 10 then goto 14260 ' display 10 cycles out of 15 (flash)
-    if (IO.eeread(16)) = 2 then r = 0 else r = 40 ' year position depending on format
+    if (IO.eeread(16)) = 2 then r = 0 else r = 60 ' year position depending on format
     LED.iled(2, r + read 10, w / 10)
     LED.iled(2, r + 10 + read 10, w % 10)
 14260: ' display solid
-    r = (IO.eeread(16)) * 20' day position depending on date format
+    r = (IO.eeread(16)) * 30' day position depending on date format
     LED.iled(5, r + read 10, (y + 1) / 10)
     LED.iled(5, r + 10 + read 10, (y + 1) % 10)
-    if (IO.eeread(16)) = 1 then r = 0 else r = 20 ' month position depending on date format
+    if (IO.eeread(16)) = 1 then r = 0 else r = 30 ' month position depending on date format
     LED.iled(5, r + read 10, (x + 1) / 10)
     LED.iled(5, r + 10 + read 10, (x + 1) % 10)
     LED.show()
@@ -1344,10 +1344,10 @@
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
 16060:
-    LED.iled(3, 20 + read 10, x / 10)
-    LED.iled(3, 30 + read 10, x % 10)
-    LED.iled(3, 40 + read 10, 0)
-    LED.iled(3, 50 + read 10, 0)
+    LED.iled(3, 30 + read 10, x / 10)
+    LED.iled(3, 40 + read 10, x % 10)
+    LED.iled(3, 60 + read 10, 0)
+    LED.iled(3, 70 + read 10, 0)
     LED.show()
     z = z + 1
     if z <= 500 then goto 16010    ' 20 Sek.
@@ -1369,13 +1369,13 @@
 16150:
     LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 16160
-    LED.iled(2, 20 + read 10, x / 10)
-    LED.iled(2, 30 + read 10, x % 10)
+    LED.iled(2, 30 + read 10, x / 10)
+    LED.iled(2, 40 + read 10, x % 10)
 16160:
     LED.iled(3,      read 10, y / 10)
     LED.iled(3, 10 + read 10, y % 10)
-    LED.iled(3, 40 + read 10, 0)
-    LED.iled(3, 50 + read 10, 0)
+    LED.iled(3, 60 + read 10, 0)
+    LED.iled(3, 70 + read 10, 0)
     LED.show()
     z = z + 1
     if z <= 500 then goto 16110    ' 20 Sek.
@@ -1446,10 +1446,10 @@
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
 18060:
-    LED.iled(4, 20 + read 10, x / 10)
-    LED.iled(4, 30 + read 10, x % 10)
-    LED.iled(4, 40 + read 10, 0)
-    LED.iled(4, 50 + read 10, 0)
+    LED.iled(4, 30 + read 10, x / 10)
+    LED.iled(4, 40 + read 10, x % 10)
+    LED.iled(4, 60 + read 10, 0)
+    LED.iled(4, 70 + read 10, 0)
     LED.show()
     z = z + 1
     if z <= 500 then goto 18010    ' 20 Seconds.
@@ -1471,13 +1471,13 @@
 18150:
     LED.irange(0, 0, 79)
     if z & 15 > 10 then goto 18160
-    LED.iled(2, 20 + read 10, x / 10)
-    LED.iled(2, 30 + read 10, x % 10)
+    LED.iled(2, 30 + read 10, x / 10)
+    LED.iled(2, 40 + read 10, x % 10)
 18160:
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
-    LED.iled(4, 40 + read 10, 0)
-    LED.iled(4, 50 + read 10, 0)
+    LED.iled(4, 60 + read 10, 0)
+    LED.iled(4, 70 + read 10, 0)
     LED.show()
     z = z + 1
     if z <= 500 then goto 18110    ' 20 Sek.
@@ -1501,10 +1501,10 @@
     LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
-    LED.iled(4, 20 + read 10, x / 10)
-    LED.iled(4, 30 + read 10, x % 10)
-    LED.iled(4, 40 + read 10, w / 10)
-    LED.iled(4, 50 + read 10, w % 10)
+    LED.iled(4, 30 + read 10, x / 10)
+    LED.iled(4, 40 + read 10, x % 10)
+    LED.iled(4, 60 + read 10, w / 10)
+    LED.iled(4, 70 + read 10, w % 10)
     LED.show()
     if w + x + y = 0 then goto 18230 ' timer end music
     w = w - 1
@@ -1531,10 +1531,10 @@
     if t = 0 then goto 99 ' timer end
     LED.iled(4,      read 10, 0)
     LED.iled(4, 10 + read 10, 0)
-    LED.iled(4, 20 + read 10, 0)
     LED.iled(4, 30 + read 10, 0)
     LED.iled(4, 40 + read 10, 0)
-    LED.iled(4, 50 + read 10, 0)
+    LED.iled(4, 60 + read 10, 0)
+    LED.iled(4, 70 + read 10, 0)
     LED.show()
     IO.beep(t)
     delay d
@@ -1550,8 +1550,8 @@
     LED.irange(0, 0, 39)
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
-    LED.iled(4, 20 + read 10, x / 10)
-    LED.iled(4, 30 + read 10, x % 10)
+    LED.iled(4, 30 + read 10, x / 10)
+    LED.iled(4, 40 + read 10, x % 10)
     LED.show()
 18315:
     if x + y + w = 0 then goto 10005 ' no timer
@@ -1580,10 +1580,10 @@
     LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10) ' hours 10s
     LED.iled(4, 10 + read 10, y % 10) ' hours 1s
-    LED.iled(4, 20 + read 10, x / 10) ' minutes 10s
-    LED.iled(4, 30 + read 10, x % 10) ' minutes 1s
-    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s
-    LED.iled(4, 50 + read 10, w % 10) ' seconds 1s
+    LED.iled(4, 30 + read 10, x / 10) ' minutes 10s
+    LED.iled(4, 40 + read 10, x % 10) ' minutes 1s
+    LED.iled(4, 60 + read 10, w / 10) ' seconds 10s
+    LED.iled(4, 70 + read 10, w % 10) ' seconds 1s
     LED.show()
     w = w + 1
     goto 19300
@@ -1605,10 +1605,10 @@
     LED.irange(0, 0, 79)
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
-    LED.iled(4, 20 + read 10, x / 10)
-    LED.iled(4, 30 + read 10, x % 10)
-    LED.iled(4, 40 + read 10, w / 10)
-    LED.iled(4, 50 + read 10, w % 10)
+    LED.iled(4, 30 + read 10, x / 10)
+    LED.iled(4, 40 + read 10, x % 10)
+    LED.iled(4, 60 + read 10, w / 10)
+    LED.iled(4, 70 + read 10, w % 10)
     LED.show()
     w = w + 1
     if w > 59 then gosub 19210
