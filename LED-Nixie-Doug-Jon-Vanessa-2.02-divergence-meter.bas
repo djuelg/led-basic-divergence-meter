@@ -247,7 +247,8 @@
 '==== SHORT PRESS: MODE SWITCH ====
     gosub 9100        ' BEEP
     if m = 0 goto 180 ' change time to date display
-    if m = 1 goto 185 ' change date to time display
+    if m = 1 goto 185 ' change date to divergence display
+    if m = 2 then goto 182 ' change divergence to time display
 180: ' change from time to date display
     if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current time colour to EEPROM
     if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode time colour to EEPROM
@@ -258,6 +259,8 @@
     if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
     if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
     m = 0               ' change to time mode
+182: ' change from divergence to time display
+    m = 0               ' mode change to time
 190: 'NB: also entry point from start
     if (IO.eeread(18)) = 0 then c = IO.eeread(m + 1) ' sets colour from eeprom if nightmode off
     if (IO.eeread(18)) = 1 then c = IO.eeread(m + 23) ' sets colour from eeprom if nightmode on
@@ -273,12 +276,19 @@
     if (IO.eeread(18)) = 1 and (IO.eeread(25)) <> 0 then v = read 30, IO.eeread(25) ' Set nighmode brightness from EEPROM
 210:
     LED.iall(0) ' Clear display
-    if m <> 0 goto 220 ' If date mode, skip time display
+    if m = 1 goto 220 ' If date mode, display date
+    if m = 2 goto 230 ' If divergence mode, display divergence
     gosub 500      ' Show time - set LEDs
     LED.show()     ' Show time - show LEDs
     goto 100       ' Back to beginning of loop
 220:
     if m <> 1 goto 100 ' If not date mode, re-enter loop
+    gosub 600      ' SHOW DATE - set LEDs
+    LED.show()     ' Show date - show LEDs
+    if z > 120 goto 185  ' Return to TIME display after ca. 3sec
+    goto 100 ' Back to beginning of loop
+230:
+    if m <> 2 goto 100 ' If not divergence mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
     if z > 120 goto 185  ' Return to TIME display after ca. 3sec
@@ -708,7 +718,7 @@
 ' Print out EEPROM to Terminal
 8050:
     print "                LED-NIXIE Clock"
-    print "by Vanessa, partially from Christoph, Doug and Jon"
+    print "by Vanessa, partially from Dominik, Christoph, Doug and Jon"
     for i = 0 to 25   ' EEPROM data output
      t = IO.eeread(i)
      print "EEP[";i;"] = ";t
