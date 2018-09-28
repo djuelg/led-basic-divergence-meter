@@ -138,6 +138,9 @@
 '40: data 15, 15, 15, 18, 18, 18, 19, 19, 20, 20, 20, 21, 21, 21, 22, 22
 '    data 27, 25, 0, 0, 20, 22, 0, 0, 32, 30, 27, 30, 0, 0, 37
 '
+' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ...
+50: data 1966, 9, 21, 1996, 12, 10, 1997, 05, 27
+'
 ' LED-INDEX SET
     led.ihsv(0, 0,   0,   0)  'off
     led.ihsv(2, 0,   0, 128)  'white (settings)
@@ -361,28 +364,33 @@
     return
 '================================================
 ' SHOW DIVERGENCE
-' VAR: n, p
+' VAR: n, p, y: Year, s: temp, a: Age
 700:
-    n = 0
+    y = read 50, 0
+    s = IO.getrtc(5)
+    a = s - y
+    n = 0 ' TODO not 0 but real value
     p = 0
     gosub 1000
-    n = 5
-    p = 20
+    s = (y * (a % 10))
+    n = s % 10
+    p = 70
     gosub 1000
-    n = 7
-    p = 30
-    gosub 1000
-    n = 1
-    p = 40
-    gosub 1000
-    n = 0
-    p = 50
-    gosub 1000
-    n = 4
+    s = (y * (a / 10)) + s / 10
+    n = s % 10
     p = 60
     gosub 1000
-    n = 6
-    p = 70
+    n = (s % 100) / 10
+    p = 50
+    gosub 1000
+    n = (s % 1000) / 100
+    p = 40
+    gosub 1000
+    n = (s % 10000) / 1000
+    p = 30
+    gosub 1000
+    n = ((s / 100) % 1000) / 100
+    p = 20
     gosub 1000
     z = z + 1
     return
@@ -637,7 +645,7 @@
 ' VAR: s, n, p, i
 5000:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm sounding so quit
-    for i = 1 to 30
+    for i = 1 to 25
      LED.irange(0, 0, 79) ' blank
      s = random
 
@@ -660,12 +668,12 @@
      n = (s % 100)/10
      p = 30
      gosub 1000        ' Minutes 1s
-     n = 0             ' TODO Not static 0 but worldline
+     if i <15 then n = s % 10 else n = 0  ' TODO Not static 0 but worldline
      p = 0
      gosub 1000        ' Hours 10s
      z = z + 1
      LED.show()
-     delay 10 + i * 2 ' increasingly slow as time goes on
+     delay 10 + i * 5 ' increasingly slow as time goes on
     next i
     s = IO.getrtc(1) ' temporarily used for random number, reset as minutes
     k = IO.getkey() ' key reset if pressed during Slot machine
