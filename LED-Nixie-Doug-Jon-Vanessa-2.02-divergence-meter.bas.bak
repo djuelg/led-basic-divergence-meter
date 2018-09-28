@@ -192,7 +192,7 @@
     if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(13)) = 1 then gosub 4000 ' random (slot machine)
     if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
     if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
-    if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and r = 2 gosub 700 ' show alarm time
+    if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and r = 2 gosub 800 ' show alarm time
 108:
     gosub 9000         ' Get key. 0 = none 1 = short press 2 = long press
     if k = 0 then goto 200 ' do nothing
@@ -217,7 +217,7 @@
     m = 2               ' mode change to divergence
     goto 190            ' done
 182: ' change from divergence to time display
-    'if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM - dunno what to change
+    'if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM - TODO dunno what to change
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
     c = IO.eeread(m + 1) ' sets colour from eeprom
@@ -239,13 +239,13 @@
     if m <> 1 then goto 100 ' If not date mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
-    if z > 120 then goto 181  ' Return to TIME display after ca. 3sec
+    if z > 120 then goto 182  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 then goto 100 ' If not divergence mode, re-enter loop
-    gosub 600      ' SHOW DATE - set LEDs
-    LED.show()     ' Show date - show LEDs
-    if z > 120 then goto 181  ' Return to TIME display after ca. 3sec
+    if z = 0 then gosub 5000 ' If first time called then divergence machine
+    gosub 700      ' SHOW DIVERGENCE - set LEDs
+    LED.show()     ' Show divergence - show LEDs
     goto 100 ' Back to beginning of loop
 '================================================
 ' handle flip fade animation
@@ -360,9 +360,36 @@
     z = z + 1
     return
 '================================================
+' SHOW DIVERGENCE
+' VAR: n, p
+700:
+    n = 0
+    p = 0
+    gosub 1000
+    n = 5
+    p = 20
+    gosub 1000
+    n = 7
+    p = 30
+    gosub 1000
+    n = 1
+    p = 40
+    gosub 1000
+    n = 0
+    p = 50
+    gosub 1000
+    n = 4
+    p = 60
+    gosub 1000
+    n = 6
+    p = 70
+    gosub 1000
+    z = z + 1
+    return
+'================================================
 ' SHOW Alarm
 ' VAR: n, p, s, i
-700:
+800:
     if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm ringing so don't display alarm time
     LED.irange(0, 0,79)
     s = IO.eeread(6)
@@ -599,6 +626,44 @@
      p = 10
      gosub 1000        ' Hours 1s
      z = z + 4 ' colour cycling
+     LED.show()
+     delay 10 + i * 2 ' increasingly slow as time goes on
+    next i
+    s = IO.getrtc(1) ' temporarily used for random number, reset as minutes
+    k = IO.getkey() ' key reset if pressed during Slot machine
+    return
+'================================================
+' SHOW Divergence machine
+' VAR: s, n, p, i
+5000:
+    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm sounding so quit
+    for i = 1 to 35
+     LED.irange(0, 0, 79) ' blank
+     s = random
+
+     n = ((s % 1000)/100) + 1
+     p = 70
+     gosub 1000        ' 10s Seconds
+     n = (s % 10000)/1000
+     p = 60
+     gosub 1000        ' Seconds 1s
+
+     n = s % 10 ' random number between 0 and 9
+     p = 40
+     gosub 1000        ' 10s Seconds
+     n = ((s % 100)/10) + 1 ' random number between 1 and 10?
+     p = 50
+     gosub 1000        ' Seconds 1s
+     n = (s % 1000)/100
+     p = 20
+     gosub 1000        ' Minutes 10s
+     n = (s % 100)/10
+     p = 30
+     gosub 1000        ' Minutes 1s
+     n = 0             ' TODO Not static 0 but worldline
+     p = 0
+     gosub 1000        ' Hours 10s
+     z = z + 1
      LED.show()
      delay 10 + i * 2 ' increasingly slow as time goes on
     next i
