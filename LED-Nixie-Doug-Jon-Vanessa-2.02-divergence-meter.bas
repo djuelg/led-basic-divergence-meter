@@ -204,15 +204,20 @@
 '==== SHORT PRESS: MODE SWITCH ====
     gosub 9100         ' BEEP
     if m = 0 then goto 180 ' change time to date display
-    if m = 1 then goto 185 ' change date to time display
+    if m = 1 then goto 181 ' change date to divergence display
+    if m = 2 then goto 182 ' change divergence to time display
     goto 100 ' shouldn't ever be reached but will recycle
 180: ' change from time to date display
     if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current time colour to EEPROM
     m = 1               ' change to date mode
     if k = 1 then x = 1 ' silence alarm when spinner pressed
     goto 190            ' done
-185: ' change from date to time display
+181: ' change from date to divergence display
     if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM
+    m = 2               ' mode change to divergence
+    goto 190            ' done
+182: ' change from divergence to time display
+    'if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM - dunno what to change
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
     c = IO.eeread(m + 1) ' sets colour from eeprom
@@ -225,7 +230,8 @@
     if (IO.eeread(4)) = 0 then v = i else v = read 30, IO.eeread(4)' Set brightness from auto or EEPROM
 210:
     LED.irange(0, 0, 79) ' Clear display
-    if m <> 0 then goto 220 ' If date mode, skip time display
+    if m = 1 then goto 220 ' If date mode, display date
+    if m = 2 then goto 230 ' If divergence mode, display divergence
     gosub 500      ' Show time - set LEDs
     LED.show()     ' Show time - show LEDs
     goto 100       ' Back to beginning of loop
@@ -233,7 +239,13 @@
     if m <> 1 then goto 100 ' If not date mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
-    if z > 120 then goto 185  ' Return to TIME display after ca. 3sec
+    if z > 120 then goto 182  ' Return to TIME display after ca. 3sec
+    goto 100 ' Back to beginning of loop
+230:
+    if m <> 2 then goto 100 ' If not divergence mode, re-enter loop
+    gosub 600      ' SHOW DATE - set LEDs
+    LED.show()     ' Show date - show LEDs
+    if z > 120 then goto 182  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 '================================================
 ' handle flip fade animation
