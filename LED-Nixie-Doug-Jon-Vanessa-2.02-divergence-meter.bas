@@ -289,8 +289,9 @@
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 goto 100 ' If not divergence mode, re-enter loop
-    gosub 600      ' SHOW DATE - set LEDs
-    LED.show()     ' Show date - show LEDs
+    if z = 0 gosub 5000 ' If first time called then divergence machine
+    gosub 800      ' SHOW DIVERGENCE - set LEDs
+    LED.show()     ' Show divergence - show LEDs
     if z > 120 goto 185  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 '================================================
@@ -477,6 +478,33 @@
     LED.iled(3, 70 + read 10,0)
     LED.show()
     delay 1500
+    return
+'================================================
+' SHOW DIVERGENCE
+' VAR: n, p
+800:
+    n = 0
+    p = 0
+    gosub 1000
+    n = 5
+    p = 20
+    gosub 1000
+    n = 7
+    p = 30
+    gosub 1000
+    n = 1
+    p = 40
+    gosub 1000
+    n = 0
+    p = 50
+    gosub 1000
+    n = 4
+    p = 60
+    gosub 1000
+    n = 6
+    p = 70
+    gosub 1000
+    z = z + 1
     return
 '================================================
 ' Character display routine for date / time (using set colour mode)
@@ -676,6 +704,44 @@
     next i
     s = IO.getrtc(1) ' temporarily used for random number, reset as minutes
     k = IO.getkey()  ' key reset if pressed during Slot machine
+    return
+'================================================
+' SHOW Divergence machine
+' VAR: s, n, p, i
+5000:
+    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s return ' alarm sounding so quit
+    for i = 1 to 30
+     LED.iall(0) ' Clear display
+     s = random
+
+     n = ((s % 1000)/100) + 1
+     p = 70
+     gosub 1000        ' 10s Seconds
+     n = (s % 10000)/1000
+     p = 60
+     gosub 1000        ' Seconds 1s
+
+     n = s % 10 ' random number between 0 and 9
+     p = 40
+     gosub 1000        ' 10s Seconds
+     n = ((s % 100)/10) + 1 ' random number between 1 and 10?
+     p = 50
+     gosub 1000        ' Seconds 1s
+     n = (s % 1000)/100
+     p = 20
+     gosub 1000        ' Minutes 10s
+     n = (s % 100)/10
+     p = 30
+     gosub 1000        ' Minutes 1s
+     n = 0             ' TODO Not static 0 but worldline
+     p = 0
+     gosub 1000        ' Hours 10s
+     z = z + 1
+     LED.show()
+     delay 10 + i * 2 ' increasingly slow as time goes on
+    next i
+    s = IO.getrtc(1) ' temporarily used for random number, reset as minutes
+    k = IO.getkey() ' key reset if pressed during Slot machine
     return
 '================================================
 ' EEPROM INIT
