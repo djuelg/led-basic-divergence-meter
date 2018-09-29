@@ -102,7 +102,7 @@
 ' displayed on the screen at program start for debugging purposes.
 '
 '******************************************************************************
-### L80 CGRB P0 S2 M92 F40
+### L80 CGRB P1 S2 M92 F40
 ' Set initial EEPROM state (for testing, uncomment to set on run)
 '    IO.eewrite(1, 11)            ' 1 = Time Colour      (11)
 '    IO.eewrite(2, 5)             ' 2 = Date Colour       (5)
@@ -121,6 +121,7 @@
 '    IO.eewrite(15, 0)            ' 15 = Seconds flip     (0)
 '    IO.eewrite(16, 0)            ' 16 = Date format      (0)
 '    IO.eewrite(17, 3)            ' 17 = Digits fade      (3)
+'    IO.eewrite(18, *calculated*) ' 18 = Current birthdate index (*calculated*)
 '
 ' Nixie Digit Index
 10: data 5, 0, 6, 1, 7, 2, 8, 3, 9, 4
@@ -138,8 +139,8 @@
 '40: data 15, 15, 15, 18, 18, 18, 19, 19, 20, 20, 20, 21, 21, 21, 22, 22
 '    data 27, 25, 0, 0, 20, 22, 0, 0, 32, 30, 27, 30, 0, 0, 37
 '
-' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ...
-50: data 1966, 9, 21, 1996, 12, 10, 1997, 05, 27
+' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ... sorted by month
+50: data 1997, 5, 27, 1966, 9, 21, 1968, 10, 15, 1996, 12, 10
 '
 ' LED-INDEX SET
     led.ihsv(0, 0,   0,   0)  'off
@@ -246,6 +247,7 @@
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 then goto 100 ' If not divergence mode, re-enter loop
+    if z = 0 then gosub 8010 ' If first time called then recalculate divergence
     if z = 0 then gosub 5000 ' If first time called then divergence machine
     gosub 700      ' SHOW DIVERGENCE - set LEDs
     LED.show()     ' Show divergence - show LEDs
@@ -364,9 +366,9 @@
     return
 '================================================
 ' SHOW DIVERGENCE
-' VAR: n, p, y: Year, a: Age
+' VAR: n, p, y: Year, s: temp, a: Age
 700:
-    y = read 50, 6
+    y = read 50, ((IO.eeread(18))-1) ' current birthyear
     s = IO.getrtc(5)
     a = s - y
     n = 0 ' TODO not 0 but real value
@@ -700,6 +702,7 @@
     IO.eewrite(15, 0)            ' 15 = Seconds flip (0)
     IO.eewrite(16, 0)            ' 16 = Date format (0)
     IO.eewrite(17, 3)            ' 17 = Digits fade (5)
+    gosub 8010                   ' 18 = Calculate current birthdate
     print "EEPROM reset."
     print " "
     IO.beep(35)
@@ -707,11 +710,22 @@
     IO.beep(0)
     return
 '================================================
+' Calculate current birthdate
+' VAR: a: actual month, d: data id of month, t: Month from data
+8010:
+    a = IO.getrtc(4)
+    for i = 1 to 10 step 3
+        t = read 50, i           '
+        if t <= a then d = i
+    next i
+    if d <> (IO.eeread(18)) then IO.eewrite(18, d) ' 18 = Current birthdate
+    return
+'================================================
 ' Print out EEPROM to Terminal
 8050:
     print "           LED-NIXIE Clock"
     print "by Vanessa, partially from Doug and Jon"
-    for i = 1 to 17   ' EEPROM data output
+    for i = 1 to 18   ' EEPROM data output
     t = IO.eeread(i)
     print "EEP[";i;"] = ";t
     next i
