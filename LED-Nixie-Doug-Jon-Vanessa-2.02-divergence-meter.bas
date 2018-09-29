@@ -160,6 +160,8 @@
 '    IO.eewrite(23, 0)            ' 23 = Nightmode Time Colour (0)
 '    IO.eewrite(24, 0)            ' 24 = Nightmode Date Colour (0)
 '    IO.eewrite(25, 1)            ' 25 = Nightmode Brightness  (1)
+'    IO.eewrite(26, 1..10)        ' 26 = Current birthdate index (1..10)
+
 '
 ' Nixie Digit Index
 10: data 5,0,6,1,7,2,8,3,9,4
@@ -177,8 +179,8 @@
 '40: data 15,15,15,18,18,18,19,19,20,20,20,21,21,21,22,22
 '    data 27,25,0,0,20,22,0,0,32,30,27,30,0,0,37
 '
-' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ...
-50: data 1966, 9, 21, 1996, 12, 10, 1997, 05, 27
+' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ... sorted by month
+50: data 1997, 5, 27, 1966, 9, 21, 1968, 10, 15, 1996, 12, 10
 '
 ' LED-INDEX SET
     led.ihsv(0, 0, 0, 0)      ' off
@@ -292,6 +294,7 @@
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 goto 100 ' If not divergence mode, re-enter loop
+    if z = 0 gosub 8010 ' If first time called then recalculate divergence
     if z = 0 gosub 5000 ' If first time called then divergence machine
     gosub 800      ' SHOW DIVERGENCE - set LEDs
     LED.show()     ' Show divergence - show LEDs
@@ -486,7 +489,7 @@
 ' SHOW DIVERGENCE
 ' VAR: n, p
 800:
-    y = read 50, 0
+    y = read 50, ((IO.eeread(26))-1) ' current birthyear
     s = IO.getrtc(5)
     a = s - y
     n = 0 ' TODO not 0 but real value
@@ -782,6 +785,7 @@
     IO.eewrite(23, 0)            ' 23 = Nightmode Time Colour (0)
     IO.eewrite(24, 0)            ' 24 = Nightmode Date Colour (0)
     IO.eewrite(25, 1)            ' 25 = Nightmode Brightness (1)
+    gosub 8010                   ' 26 = Calculate current birthdate
     print "EEPROM reset."
     print " "
     IO.beep(35)
@@ -789,11 +793,22 @@
     IO.beep(0)
     return
 '================================================
+' Calculate current birthdate
+' VAR: a: actual month, d: data id of month, t: Month from data
+8010:
+    a = IO.getrtc(4)
+    for i = 1 to 10 step 3
+        t = read 50, i           '
+        if t <= a then d = i
+    next i
+    if d <> (IO.eeread(26)) then IO.eewrite(26, d) ' 18 = Current birthdate
+    return
+'================================================
 ' Print out EEPROM to Terminal
 8050:
     print "                LED-NIXIE Clock"
     print "by Vanessa, partially from Dominik, Christoph, Doug and Jon"
-    for i = 0 to 25   ' EEPROM data output
+    for i = 0 to 26   ' EEPROM data output
      t = IO.eeread(i)
      print "EEP[";i;"] = ";t
     next i
