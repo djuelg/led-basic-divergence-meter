@@ -121,7 +121,7 @@
 '    IO.eewrite(15, 0)            ' 15 = Seconds flip     (0)
 '    IO.eewrite(16, 0)            ' 16 = Date format      (0)
 '    IO.eewrite(17, 3)            ' 17 = Digits fade      (3)
-'    IO.eewrite(18, *calculated*) ' 18 = Current birthdate index (*calculated*)
+'    IO.eewrite(18, 1..10)        ' 18 = Current birthdate index (1..10)
 '
 ' Nixie Digit Index
 10: data 5, 0, 6, 1, 7, 2, 8, 3, 9, 4
@@ -192,6 +192,7 @@
     s = IO.getrtc(1) ' minutes
     r = IO.getrtc(0) ' seconds
     if r = 0 then x = 0 ' reset alarm silencer
+    if a = 0 and s = 0 and r = 1 then gosub 710 ' its midnight so test for new divergence
     if (IO.eeread(5)) = 1 and x = 0 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then gosub 9105 ' alarm so ringing
     if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(13)) = 1 then gosub 4000 ' random (slot machine)
     if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
@@ -212,19 +213,18 @@
     if m = 2 then goto 182 ' change divergence to time display
     goto 100 ' shouldn't ever be reached but will recycle
 180: ' change from time to date display
-    if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current time colour to EEPROM
+    if (IO.eeread(1)) <> c then IO.eewrite(1, c)' saves current time colour to EEPROM
     m = 1               ' change to date mode
     if k = 1 then x = 1 ' silence alarm when spinner pressed
     goto 190            ' done
 181: ' change from date to divergence display
-    if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM
+    if (IO.eeread(2)) <> c then IO.eewrite(2, c)' saves current date colour to EEPROM
     m = 2               ' mode change to divergence
     goto 190            ' done
 182: ' change from divergence to time display
-    'if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM - TODO dunno what to change
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
-    c = IO.eeread(m + 1) ' sets colour from eeprom
+    c = IO.eeread(m + 1) ' sets colour from eeprom, for m=2 it will be overriden
     IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
     z = 0 ' reset counter
 200:
@@ -247,11 +247,14 @@
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 then goto 100 ' If not divergence mode, re-enter loop
-    if z = 0 then gosub 8010 ' If first time called then recalculate divergence
-    if z = 0 then gosub 5000 ' If first time called then divergence machine
+    if z = 0 then gosub 240 ' If first time called initialize
     gosub 700      ' SHOW DIVERGENCE - set LEDs
     LED.show()     ' Show divergence - show LEDs
     goto 100 ' Back to beginning of loop
+240:
+    gosub 8010    ' update divergence
+    gosub 5000    ' show convergence machine
+    return
 '================================================
 ' handle flip fade animation
 400:
@@ -395,6 +398,17 @@
     p = 20
     gosub 1000
     z = z + 1
+    return
+'================================================
+' TEST FOR DIVERGENCE CHANGE
+' VAR: r: previous birthdate
+710:
+    print "its midnight"
+    r = IO.eeread(18)
+    gosub 8010
+    print r
+    print IO.eeread(18)
+    if r <> (IO.eeread(18)) then goto 181
     return
 '================================================
 ' SHOW Alarm
