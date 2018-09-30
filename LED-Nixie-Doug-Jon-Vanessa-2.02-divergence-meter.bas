@@ -253,7 +253,8 @@
     goto 100 ' Back to beginning of loop
 240:
     gosub 8010    ' update divergence
-    gosub 5000    ' show convergence machine
+    gosub 5000    ' show divergence machine
+    LED.irange(0, 0, 79)
     return
 '================================================
 ' handle flip fade animation
@@ -397,6 +398,9 @@
     n = ((s / 100) % 1000) / 100
     p = 20
     gosub 1000
+    if z >= 200 and z <= 203 then LED.irange(0, 0, 49)
+    if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
+    if z >= 3000 then z = 0
     z = z + 1
     return
 '================================================
@@ -681,7 +685,7 @@
      n = (s % 100)/10
      p = 30
      gosub 1000        ' Minutes 1s
-     if i <15 then n = s % 10 else n = 0  ' TODO Not static 0 but worldline
+     if i < 15 then n = s % 10 else n = 0  ' TODO Not static 0 but worldline
      p = 0
      gosub 1000        ' Hours 10s
      z = z + 1
