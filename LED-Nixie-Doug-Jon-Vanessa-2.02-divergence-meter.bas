@@ -302,7 +302,8 @@
     goto 100 ' Back to beginning of loop
 240:
     gosub 8010    ' update divergence
-    gosub 5000    ' show convergence machine
+    gosub 5000    ' show divergence machine
+    LED.iall(0) ' Clear display
     return
 '================================================
 ' AUTO NIGHTMODE TOGGLE
@@ -501,34 +502,37 @@
 ' SHOW DIVERGENCE
 ' VAR: n, p
 800:
-    y = read 50, ((IO.eeread(26))-1) ' current birthyear
-    s = IO.getrtc(5)
-    a = s - y
-    n = 0 ' TODO not 0 but real value
-    p = 0
-    gosub 1000
-    s = (y * (a % 10))
-    n = s % 10
-    p = 70
-    gosub 1000
-    s = (y * (a / 10)) + s / 10
-    n = s % 10
-    p = 60
-    gosub 1000
-    n = (s % 100) / 10
-    p = 50
-    gosub 1000
-    n = (s % 1000) / 100
-    p = 40
-    gosub 1000
-    n = (s % 10000) / 1000
-    p = 30
-    gosub 1000
-    n = ((s / 100) % 1000) / 100
-    p = 20
-    gosub 1000
-    z = z + 1
-    return
+   y = read 50, ((IO.eeread(26))-1) ' current birthyear
+      s = IO.getrtc(5)
+      a = s - y
+      n = 0 ' TODO not 0 but real value
+      p = 0
+      gosub 1000
+      s = (y * (a % 10))
+      n = s % 10
+      p = 70
+      gosub 1000
+      s = (y * (a / 10)) + s / 10
+      n = s % 10
+      p = 60
+      gosub 1000
+      n = (s % 100) / 10
+      p = 50
+      gosub 1000
+      n = (s % 1000) / 100
+      p = 40
+      gosub 1000
+      n = (s % 10000) / 1000
+      p = 30
+      gosub 1000
+      n = ((s / 100) % 1000) / 100
+      p = 20
+      gosub 1000
+      if z >= 200 and z <= 203 then LED.irange(0, 0, 49) ' flickering numbers animation
+      if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
+      if z >= 3000 then z = 0
+      z = z + 1
+      return
 '================================================
 ' Character display routine for date / time (using set colour mode)
 1000:
@@ -756,7 +760,7 @@
      n = (s % 100)/10
      p = 30
      gosub 1000        ' Minutes 1s
-     if i <15 then n = s % 10 else n = 0  ' TODO Not static 0 but worldline
+     if i < 15 then n = s % 10 else n = 0  ' TODO Not static 0 but worldline
      p = 0
      gosub 1000        ' Hours 10s
      z = z + 1
