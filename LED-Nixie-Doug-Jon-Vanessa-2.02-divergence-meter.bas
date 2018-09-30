@@ -232,6 +232,7 @@
     s = IO.getrtc(1) ' minutes
     a = IO.getrtc(2) ' hours
     if r = 0 then x = 0 ' reset alarm silencer
+    if a = 0 and s = 0 and r = 1 then gosub 810 ' its midnight so test for new divergence
     if r = 0 and (IO.eeread(19)) = (IO.eeread(21)) and (IO.eeread(20)) = (IO.eeread(22)) goto 108 ' no night duration
     if r = 0 and (IO.eeread(19)) = a and (IO.eeread(20)) = s gosub 300 ' nightmode on
     if r = 0 and (IO.eeread(21)) = a and (IO.eeread(22)) = s gosub 305 ' nightmode off
@@ -260,10 +261,10 @@
     m = 1               ' change to date mode
     if k = 1 then x = 1 ' silence alarm when spinner pressed
     goto 190            ' done
-185: ' change from date to time display
+185: ' change from date to divergence display
     if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
     if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
-    m = 0               ' change to time mode
+    m = 2               ' mode change to divergence
 182: ' change from divergence to time display
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
@@ -294,12 +295,15 @@
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 goto 100 ' If not divergence mode, re-enter loop
-    if z = 0 gosub 8010 ' If first time called then recalculate divergence
-    if z = 0 gosub 5000 ' If first time called then divergence machine
+    if z = 0 gosub 240 ' If first time called initialize
     gosub 800      ' SHOW DIVERGENCE - set LEDs
     LED.show()     ' Show divergence - show LEDs
     if z > 120 goto 185  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
+240:
+    gosub 8010    ' update divergence
+    gosub 5000    ' show convergence machine
+    return
 '================================================
 ' AUTO NIGHTMODE TOGGLE
 300:
@@ -435,6 +439,14 @@
     gosub 1000        ' Year units
     s = IO.getrtc(1) ' minutes reset to s
     z = z + 1
+    return
+'================================================
+' TEST FOR DIVERGENCE CHANGE
+' VAR: r: previous birthdate
+810:
+    r = IO.eeread(26)
+    gosub 8010
+    if r <> (IO.eeread(26)) then goto 185
     return
 '================================================
 ' SHOW Alarm
