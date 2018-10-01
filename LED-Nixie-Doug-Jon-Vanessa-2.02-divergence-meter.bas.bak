@@ -102,7 +102,7 @@
 ' displayed on the screen at program start for debugging purposes.
 '
 '******************************************************************************
-### L80 CGRB P1 S2 M92 F40
+### L80 CGRB P0 S2 M92 F40
 ' Set initial EEPROM state (for testing, uncomment to set on run)
 '    IO.eewrite(1, 11)            ' 1 = Time Colour      (11)
 '    IO.eewrite(2, 5)             ' 2 = Date Colour       (5)
@@ -133,11 +133,17 @@
 30: data 0, 3, 6, 9, 16, 25, 37, 51, 68, 87, 109, 133, 160, 189, 221, 255
 '
 ' Music Timer / Stopwatch max :-)
-40: data 13, 200, 15, 200, 17, 200, 13, 200, 13, 200, 15, 200, 17, 200, 13,
-    data 200, 17, 200, 18, 200, 20, 400, 17, 200, 18, 200, 20, 400
+'40: data 13, 200, 15, 200, 17, 200, 13, 200, 13, 200, 15, 200, 17, 200, 13,
+'    data 200, 17, 200, 18, 200, 20, 400, 17, 200, 18, 200, 20, 400
 '   alternate uk version
 '40: data 15, 15, 15, 18, 18, 18, 19, 19, 20, 20, 20, 21, 21, 21, 22, 22
-'    data 27, 25, 0, 0, 20, 22, 0, 0, 32, 30, 27, 30, 0, 0, 37
+'    data 27, 25, 1, 1, 20, 22, 1, 1, 32, 30, 27, 30, 1, 1, 37
+'   Hacking to the Gate
+40:  data 22, 300, 18, 150, 18, 300, 15, 150, 18, 150, 17, 300, 18, 150, 20, 600
+     data 15, 150, 15, 150, 17, 300, 13, 150, 20, 300, 13, 150, 17, 150, 17, 150, 15, 600
+     data 15, 300, 18, 300, 20, 300, 22, 150, 20, 300, 20, 150, 20, 150
+     data 22, 300, 17, 150, 17, 300, 13, 150, 20, 150, 20, 150, 18, 600
+     data 20, 300, 22, 150, 20, 150, 18, 600
 '
 ' Birthdays in format YYYY, MM, DD, YYYY, MM, DD, ... sorted by month
 50: data 1997, 5, 27, 1966, 9, 21, 1968, 10, 15, 1996, 12, 10
@@ -241,6 +247,7 @@
     goto 100       ' Back to beginning of loop
 220:
     if m <> 1 then goto 100 ' If not date mode, re-enter loop
+    goto 18230
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
     if z > 120 then goto 182  ' Return to TIME display after ca. 3sec
@@ -400,9 +407,7 @@
     gosub 1000
     if z >= 200 and z <= 203 then LED.irange(0, 0, 49)
     if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
-    if z >= 420 and z <= 426 then LED.irange(0, 0, 79)
     if z >= 3000 then z = 0
-    print z
     z = z + 1
     return
 '================================================
