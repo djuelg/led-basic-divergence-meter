@@ -307,7 +307,7 @@
     if z > 120 goto 185  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 240:
-    gosub 8010    ' update divergence
+    gosub 8020    ' update divergence
     gosub 5000    ' show divergence machine
     LED.iall(0) ' Clear display
     return
@@ -452,7 +452,7 @@
 ' VAR: r: previous birthdate
 810:
     r = IO.eeread(26)
-    gosub 8010
+    gosub 8020
     if r <> (IO.eeread(26)) then goto 185
     return
 '================================================
@@ -508,37 +508,39 @@
 ' SHOW DIVERGENCE
 ' VAR: n, p
 800:
-   y = read 50, ((IO.eeread(26))-1) ' current birthyear
-      s = IO.getrtc(5)
-      a = s - y
-      n = 0 ' TODO not 0 but real value
-      p = 0
-      gosub 1000
-      s = (y * (a % 10))
-      n = s % 10
-      p = 70
-      gosub 1000
-      s = (y * (a / 10)) + s / 10
-      n = s % 10
-      p = 60
-      gosub 1000
-      n = (s % 100) / 10
-      p = 50
-      gosub 1000
-      n = (s % 1000) / 100
-      p = 40
-      gosub 1000
-      n = (s % 10000) / 1000
-      p = 30
-      gosub 1000
-      n = ((s / 100) % 1000) / 100
-      p = 20
-      gosub 1000
-      if z >= 200 and z <= 203 then LED.irange(0, 0, 49) ' flickering numbers animation
-      if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
-      if z >= 3000 then z = 0
-      z = z + 1
-      return
+    y = read 50, ((IO.eeread(26))-1) ' current birthyear
+    s = IO.getrtc(5)
+    if (IO.getrtc(4)) <= 5 then s = s-1 ' use last year
+    a = s - y
+    n = 0 ' TODO not 0 but real value
+    p = 0
+    gosub 1000
+    s = (y * (a % 10))
+    n = s % 10
+    p = 70
+    gosub 1000
+    s = (y * (a / 10)) + s / 10
+    n = s % 10
+    p = 60
+    gosub 1000
+    n = (s % 100) / 10
+    p = 50
+    gosub 1000
+    n = (s % 1000) / 100
+    p = 40
+    gosub 1000
+    n = (s % 10000) / 1000
+    p = 30
+    gosub 1000
+    n = ((s / 100) % 1000) / 100
+    p = 20
+    gosub 1000
+    ' flickering numbers animation
+    if z >= 200 and z <= 203 then LED.irange(0, 0, 49)
+    if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
+    if z >= 3000 then z = 0
+    z = z + 1
+    return
 '================================================
 ' Character display routine for date / time (using set colour mode)
 1000:
@@ -815,15 +817,25 @@
     IO.beep(0)
     return
 '================================================
-' Calculate current birthdate
-' VAR: a: actual month, d: data id of month, t: Month from data
+' Initialize with last birthdate
+' VAR: w: data id of month, g: Month from data
 8010:
-    a = IO.getrtc(4)
     for i = 1 to 10 step 3
-        t = read 50, i           '
-        if t <= a then d = i
+        g = read 50, i
+        if g < (IO.getrtc(4)) then w = i ' w = the largest birthday-month which is smaller than the actual
     next i
-    if d <> (IO.eeread(26)) then IO.eewrite(26, d) ' 18 = Current birthdate
+    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12
+    if w <> (IO.eeread(26)) then IO.eewrite(26, w) ' 26 = Current birthdate data id
+    return
+'================================================
+' Calculate if birthdate change
+' VAR: g: Month from data, q: Day from data
+8020:
+    for i = 1 to 10 step 3
+        g = read 50, i
+        q = read 50, (i+1)
+        if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(18)) then IO.eewrite(18, i) ' true if the actual month is a birthday-month and on/after birthday
+    next i
     return
 '================================================
 ' Print out EEPROM to Terminal
