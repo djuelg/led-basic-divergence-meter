@@ -247,7 +247,6 @@
     goto 100       ' Back to beginning of loop
 220:
     if m <> 1 then goto 100 ' If not date mode, re-enter loop
-    goto 18230
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
     if z > 120 then goto 182  ' Return to TIME display after ca. 3sec
@@ -259,7 +258,7 @@
     LED.show()     ' Show divergence - show LEDs
     goto 100 ' Back to beginning of loop
 240:
-    gosub 8010    ' update divergence
+    gosub 8020    ' update divergence
     gosub 5000    ' show divergence machine
     LED.irange(0, 0, 79)
     return
@@ -381,6 +380,7 @@
 700:
     y = read 50, ((IO.eeread(18))-1) ' current birthyear
     s = IO.getrtc(5)
+    if IO.getrtc(4) <= 5 then s = s-1 ' use last year
     a = s - y
     n = 0 ' TODO not 0 but real value
     p = 0
@@ -415,7 +415,7 @@
 ' VAR: r: previous birthdate
 710:
     r = IO.eeread(18)
-    gosub 8010
+    gosub 8020
     if r <> (IO.eeread(18)) then goto 181
     return
 '================================================
@@ -732,15 +732,25 @@
     IO.beep(0)
     return
 '================================================
-' Calculate current birthdate
-' VAR: a: actual month, d: data id of month, t: Month from data
+' Initialize with last birthdate
+' VAR: w: data id of month, g: Month from data
 8010:
-    a = IO.getrtc(4)
     for i = 1 to 10 step 3
-        t = read 50, i           '
-        if t <= a then d = i
+        g = read 50, i
+        if g < (IO.getrtc(4)) then w = i ' w = the largest birthday-month which is smaller than the actual
     next i
-    if d <> (IO.eeread(18)) then IO.eewrite(18, d) ' 18 = Current birthdate
+    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12
+    if w <> (IO.eeread(18)) then IO.eewrite(18, w) ' 18 = Current birthdate data id
+    return
+'================================================
+' Calculate if birthdate change
+' VAR: g: Month from data, q: Day from data
+8020:
+    for i = 1 to 10 step 3
+        g = read 50, i
+        q = read 50, (i+1)
+        if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(18)) then IO.eewrite(18, i) ' true if the actual month is a birthday-month and on/after birthday
+    next i
     return
 '================================================
 ' Print out EEPROM to Terminal
