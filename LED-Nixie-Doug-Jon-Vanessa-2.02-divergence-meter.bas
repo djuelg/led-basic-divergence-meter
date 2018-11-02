@@ -252,6 +252,7 @@
     if k = 1 goto 110 ' short press: change display mode
     if k = 3 and (IO.eeread(18)) = 1 goto 310 ' extra long press: nightmode manual off
     if k = 3 and (IO.eeread(18)) = 0 goto 315 ' extra long press: nightmode manual on
+    if k = 2 and m = 2 then goto 33000 ' worldline prediction
     if k = 2 and m = 1 goto 10100 ' system menu
     if k = 2 goto 10000 ' settings menu
     goto 200 ' k = 0
@@ -2091,5 +2092,104 @@
 23070:
     if y <> (IO.eeread(25)) then IO.eewrite(25, y) ' Write NIGHTMODE Brightness Value
     goto 10105 ' return to system menu
+'================================================
+' DIVERGENCE SET
+' VAR: w,x,y,t,z,k
+33000:
+    y = IO.getrtc(2)  ' Read Hour
+    x = IO.getrtc(1)  ' Read Minute
+    w = 0             ' Second = 0
+33005: ' hours
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(y, 23, 0) ' 0-23 wraparound
+33010:
+    t = IO.getenc()
+    if t = y then goto 33020
+    y = t
+    z = 0 ' reset counter
+33020:
+    gosub 9000        ' GETKEY
+    if k = 1 then goto 33100 ' short press > minutes
+    if k = 2 then goto 33300 ' long press > save, exit
+33050: ' no key pressed
+    LED.irange(0, 0, 79) ' blank out LEDs
+    if z & 15 > 10 then goto 33060 ' only light 1st 2 pixels 10 / 15 cycles
+    LED.iled(2,      read 10, y / 10) ' hours 10s, white
+    LED.iled(2, 10 + read 10, y % 10) ' hours units, white
+33060:
+    LED.iled(5, 30 + read 10, x / 10) ' minutes 10s, yellow
+    LED.iled(5, 40 + read 10, x % 10) ' minutes units, yellow
+    LED.iled(5, 60 + read 10, (w * 5) / 10) ' seconds 10s, yellow
+    LED.iled(5, 70 + read 10, (w * 5) % 10) ' seconds units, yellow
+    LED.show()
+    z = z + 1
+    if z <= 500 then goto 33010    ' time out
+    goto 33320
+'................................................
+33100: ' minutes
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(x, 59, 0) ' 0 - 59 wraparound
+33110:
+    t = IO.getenc()
+    if t = x then goto 33120
+    x = t
+    z = 0 ' reset counter
+33120:
+    gosub 9000        ' GETKEY
+    if k = 1 then goto 33200 ' short press > seconds
+    if k = 2 then goto 33300 ' long press > save, exit
+33150:
+    LED.irange(0, 0, 79) ' blank out
+    if z & 15 > 10 then goto 33160 ' only show minutes 10 / 15 cycles
+    LED.iled(2, 30 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 40 + read 10, x % 10) ' minutes, units, white
+33160:
+    LED.iled(5,      read 10, y / 10) ' hours, 10s, yellow, constant
+    LED.iled(5, 10 + read 10, y % 10) ' hours, units, yellow, constant
+    LED.iled(5, 60 + read 10, (w * 5) / 10) 'seconds, 10s, yellow, constant
+    LED.iled(5, 70 + read 10, (w * 5) % 10) 'seconds, units, yellow, constant
+    LED.show()
+    z = z + 1
+    if z <= 500 then goto 33110    ' timeout
+    goto 33320
+'................................................
+33200: ' seconds
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(w, 11, 0) ' 0 - 55 in 5 second increments, wraparound
+33210:
+    t = IO.getenc()
+    if t = w then goto 33220
+    w = t
+    z = 0
+33220:
+    gosub 9000        ' GETKEY
+    if k = 1 then goto 33005 ' short click > hours
+    if k = 2 then goto 33300 ' long click > save, exit
+33250:
+    LED.irange(0, 0, 79) ' blank out
+    if z & 15 > 10 then goto 33260 ' only light seconds 10 / 15 cycles
+    LED.iled(2, 60 + read 10, (w * 5) / 10) ' seconds 10s white
+    LED.iled(2, 70 + read 10, (w * 5) % 10) ' seconds units white
+33260:
+    LED.iled(5,      read 10, y / 10) ' hours 10s yellow constant
+    LED.iled(5, 10 + read 10, y % 10) ' hours units yellow constant
+    LED.iled(5, 30 + read 10, x / 10) ' minutes 10s yellow constant
+    LED.iled(5, 40 + read 10, x % 10) ' minutes units yellow constant
+    LED.show()
+    z = z + 1
+    if z <= 500 then goto 33210    ' time out
+    goto 33320
+'................................................
+33300: ' save, exit
+    gosub 9100        ' BEEP
+33310:
+    IO.setrtc(0, w * 5)    ' Write Seconds
+    IO.setrtc(1, x)        ' Write Minutes
+    IO.setrtc(2, y)        ' Write Hours
+33320:
+    goto 100 ' return to settings menu
 '================================================
 end
