@@ -200,9 +200,13 @@
     LED.blackout() ' turn off all LEDs
 '
 ' Version
-    LED.iled(2, 50 + read 10, 2)
-    LED.iled(2, 60 + read 10, 1)
-    LED.iled(2, 70 + read 10, 5)
+    LED.iled(3,      read 10, 1)
+    LED.iled(3, 20 + read 10, 0)
+    LED.iled(3, 30 + read 10, 4)
+    LED.iled(3, 40 + read 10, 8)
+    LED.iled(3, 50 + read 10, 5)
+    LED.iled(3, 60 + read 10, 9)
+    LED.iled(3, 70 + read 10, 6)
     LED.show()
     delay 2000
 '
@@ -234,6 +238,7 @@
     t = IO.getenc()  ' Read Encoder
     if t = c goto 105
     c = t            ' color set (knob turned)
+    if m = 2 then c = 0     ' color orange for divergence
     z = 0            ' counter reset
 105:
     r = IO.getrtc(0) ' seconds
@@ -279,6 +284,7 @@
 190: 'NB: also entry point from start
     if (IO.eeread(18)) = 0 then c = IO.eeread(m + 1) ' sets colour from eeprom if nightmode off
     if (IO.eeread(18)) = 1 then c = IO.eeread(m + 23) ' sets colour from eeprom if nightmode on
+    if m = 2 then c = 0     ' color orange for divergence
     IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
     z = 0 ' reset counter
 200:
@@ -2132,13 +2138,13 @@
 43050: ' no key pressed
     LED.iall(0) ' Clear display
     if z & 15 > 10 then goto 43060 ' only light 1st 2 pixels 10 / 15 cycles
-    LED.iled(5,      read 10, 0)
-    LED.iled(5, 20 + read 10, y / 100)
-    LED.iled(5, 30 + read 10, y / 10 % 10)
-    LED.iled(5, 40 + read 10, y % 10)
-    LED.iled(5, 50 + read 10, x / 100)
-    LED.iled(5, 60 + read 10, x / 10 % 10)
-    LED.iled(5, 70 + read 10, x % 10)
+    LED.iled(3,      read 10, 0)
+    LED.iled(3, 20 + read 10, y / 100)
+    LED.iled(3, 30 + read 10, y / 10 % 10)
+    LED.iled(3, 40 + read 10, y % 10)
+    LED.iled(3, 50 + read 10, x / 100)
+    LED.iled(3, 60 + read 10, x / 10 % 10)
+    LED.iled(3, 70 + read 10, x % 10)
 43060:
     LED.iled(2, ((w + 2) * 10) + read 10, t)
     LED.show()
@@ -2149,9 +2155,9 @@
 43300: ' save, exit
     gosub 9100        ' BEEP
 43310:
-    ' TODO Save
     IO.eewrite(27, y)
     IO.eewrite(28, x)
+    delay 500
 43320:
     goto 100 ' return to main loop
 '================================================
