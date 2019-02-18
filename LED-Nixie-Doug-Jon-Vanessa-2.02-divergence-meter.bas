@@ -245,12 +245,12 @@
     s = IO.getrtc(1) ' minutes
     a = IO.getrtc(2) ' hours
     if r = 0 then x = 0 ' reset alarm silencer
-    if a = 0 and s = 0 and r = 1 then gosub 810 ' its midnight so test for new divergence
     if r = 0 and (IO.eeread(19)) = (IO.eeread(21)) and (IO.eeread(20)) = (IO.eeread(22)) goto 108 ' no night duration
     if r = 0 and (IO.eeread(19)) = a and (IO.eeread(20)) = s gosub 300 ' nightmode on
     if r = 0 and (IO.eeread(21)) = a and (IO.eeread(22)) = s gosub 305 ' nightmode off
 108:
     if x = 0 and (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s gosub 9150 ' alarm so ringing
+    if a = 0 and s = 0 and r = 2 then gosub 810 ' its midnight so test for new divergence
     if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(18)) = 0 and (IO.eeread(13)) = 1 gosub 4000 ' random (slot machine)
     if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(18)) = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
     if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
@@ -458,11 +458,34 @@
     return
 '================================================
 ' TEST FOR DIVERGENCE CHANGE
-' VAR: r: previous birthdate
+' VAR: r: previous birthdate id
 810:
     r = IO.eeread(26)
     gosub 8020
-    if r <> (IO.eeread(26)) then goto 185
+    if r <> (IO.eeread(26)) then gosub 820 else gosub 830 ' TODO REMOVE ELSE 'if birthdate id changed
+    return
+820:
+    print "Birthdate id changed"
+    ' TODO if birthdate change -> check prediction is correct
+    gosub 830
+    m = 2 ' switch to divergence mode
+    z = 0 ' reset counter to trigger divergence animation
+    return
+'================================================
+' CHECK IF PREDICTION IS CORRECT
+' (update divergence) VAR: eeread(26): Birthday id (either 1, 4, 7 or 10)
+830:
+    print "Evaluating divergence prediction"
+    print "predicted triple 1: ",(IO.eeread(27))
+    print "predcited triple 2: ",(IO.eeread(28))
+    g = read 50, ((IO.eeread(26))-1) ' current birthdate year
+    q = ((((IO.getrtc(5)) - g)/10)*g) + ((((IO.getrtc(5)) - g)%10)*g/10) 'first triple: (5*1966 + 3*1966/10)/100
+    q = q / 100
+    g = ((((((IO.getrtc(5)) - g)/10)*g)%100)*10 + (((IO.getrtc(5)) - g)%10)*g) 'scnd triple: (5*1966%100*10 + 2*1966)%1000
+    g = g % 1000
+    print "real triple 1: ",q
+    print "real triple 2: ",g
+    ' TODO if both triples are same like eeprom then switch flag
     return
 '================================================
 ' SHOW Alarm
@@ -818,9 +841,10 @@
     IO.eewrite(23, 0)            ' 23 = Nightmode Time Colour (0)
     IO.eewrite(24, 0)            ' 24 = Nightmode Date Colour (0)
     IO.eewrite(25, 1)            ' 25 = Nightmode Brightness (1)
-    gosub 8010                   ' 26 = Calculate current birthdate
+    IO.eewrite(26, 0)            ' 26 = Birthdate month id (0)
     IO.eewrite(27, 0)            ' 27 = worldline prediction triple 1 (0)
     IO.eewrite(28, 0)            ' 28 = worldline prediction triple 2 (0)
+    gosub 8010                   ' 28 = Calculate current birthdate
     print "EEPROM reset."
     print " "
     IO.beep(35)
@@ -829,23 +853,28 @@
     return
 '================================================
 ' Initialize with last birthdate
-' VAR: w: data id of month, g: Month from data
+' VAR: w: data id of month, g: Month from data, eeread(26): Birthdate month id (either 1, 4, 7 or 10)
 8010:
+    print "Initialize birthdate id"
     for i = 1 to 10 step 3
         g = read 50, i
         if g < (IO.getrtc(4)) then w = i ' w = the largest birthday-month which is smaller than the actual
     next i
-    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12
-    if w <> (IO.eeread(26)) then IO.eewrite(26, w) ' 26 = Current birthdate data id
+    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12 (birthdate id=10)
+    if w <> (IO.eeread(26)) then IO.eewrite(26, w) ' 26 = Current birthdate month data id
+    print "Birthdate id is most probably ",w
+    gosub 8020
     return
 '================================================
 ' Calculate if birthdate change
-' VAR: g: Month from data, q: Day from data
+' VAR: g: Month from data, q: Day from data, eeread(26): Birthdate month id (either 1, 4, 7 or 10)
 8020:
+    print "Recalculate birthdate id"
     for i = 1 to 10 step 3
         g = read 50, i
         q = read 50, (i+1)
-        if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(18)) then IO.eewrite(18, i) ' true if the actual month is a birthday-month and on/after birthday
+        if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(26)) then IO.eewrite(26, i) ' true if the actual month is a birthday-month and on/after birthday
+        print "New Birthdate id is ",(IO.eeread(26))
     next i
     return
 '================================================
@@ -1390,6 +1419,8 @@
     IO.setrtc(1, x)        ' Write Minutes
     IO.setrtc(2, y)        ' Write Hours
 13320:
+    gosub 8010
+    gosub 810  ' check for divergence change
     goto 10005 ' return to settings menu
 '================================================
 ' F4: DATE SETUP
@@ -1503,6 +1534,8 @@
     IO.setrtc(4, x + 1)        ' Write Month
     IO.setrtc(3, y + 1)        ' Write Day
 14320: ' exit
+    gosub 8010
+    gosub 810  ' check for divergence change
     goto 10005
 14330: ' non-sane date
     for r = 1 to 15 ' non-sane days in month beep 15 times
