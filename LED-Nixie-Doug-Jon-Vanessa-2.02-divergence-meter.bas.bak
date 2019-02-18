@@ -102,7 +102,7 @@
 ' displayed on the screen at program start for debugging purposes.
 '
 '******************************************************************************
-### L80 CGRB P0 S2 M92 F40
+### L80 CGRB P1 S2 M92 F40
 ' Set initial EEPROM state (for testing, uncomment to set on run)
 '    IO.eewrite(1, 11)            ' 1 = Time Colour      (11)
 '    IO.eewrite(2, 5)             ' 2 = Date Colour       (5)
@@ -204,7 +204,7 @@
     s = IO.getrtc(1) ' minutes
     r = IO.getrtc(0) ' seconds
     if r = 0 then x = 0 ' reset alarm silencer
-    if a = 0 and s = 0 and r = 1 then gosub 710 ' its midnight so test for new divergence
+    if a = 0 and s = 0 and r = 2 then gosub 710 ' its midnight so test for new divergence
     if (IO.eeread(5)) = 1 and x = 0 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then gosub 9105 ' alarm so ringing
     if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(13)) = 1 then gosub 4000 ' random (slot machine)
     if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
@@ -266,7 +266,6 @@
     LED.show()     ' Show divergence - show LEDs
     goto 100 ' Back to beginning of loop
 240:
-    IO.setenc(0, 0, 0)  ' disable colour spinner
     gosub 8020    ' update divergence
     gosub 5000    ' show divergence machine
     LED.irange(0, 0, 79)
@@ -421,11 +420,37 @@
     return
 '================================================
 ' TEST FOR DIVERGENCE CHANGE
-' VAR: r: previous birthdate
+' VAR: r: previous birthdate id
 710:
     r = IO.eeread(18)
     gosub 8020
-    if r <> (IO.eeread(18)) then goto 181
+    if r <> (IO.eeread(18)) then gosub 720 else gosub 730 ' TODO REMOVE ELSE 'if birthdate id changed
+    return
+720:
+    print "Birthdate id changed"
+    ' TODO if birthdate change -> check prediction is correct
+    gosub 730
+    m = 2 ' switch to divergence mode
+    z = 0 ' reset counter to trigger divergence animation
+    return
+'================================================
+' CHECK IF PREDICTION IS CORRECT
+' (update divergence) VAR: eeread(18): Birthday id (either 1, 4, 7 or 10)
+730:
+    print "Evaluating divergence prediction"
+    print "predicted triple 1: ",(IO.eeread(19))
+    print "predcited triple 2: ",(IO.eeread(20))
+    g = read 50, ((IO.eeread(18))-1) ' current birthdate year
+    q = ((IO.getrtc(5)) - g)
+    'q = ((q * (g / 10))/10)/10 ' first triple: (age*birthyear/10)/100
+    q = ((((IO.getrtc(5)) - g)/10)*g) + ((((IO.getrtc(5)) - g)%10)*g/10)
+    q = q / 100
+    g = ((((((IO.getrtc(5)) - g)/10)*g)%100)*10 + (((IO.getrtc(5)) - g)%10)*g)
+    g = g % 1000
+    'g = (((((IO.getrtc(5)) - g)/10)*g)%100)*10 + (((IO.getrtc(5)) - g)%10)*g)%1000 'scnd triple: (((decades*birthyear)%100)*10 + yearsInDecade*birthyear)%1000
+    print "real triple 1: ",q
+    print "real triple 2: ",g
+    ' TODO if both triples are same like eeprom then switch flag
     return
 '================================================
 ' SHOW Alarm
@@ -733,9 +758,10 @@
     IO.eewrite(15, 0)            ' 15 = Seconds flip (0)
     IO.eewrite(16, 0)            ' 16 = Date format (0)
     IO.eewrite(17, 3)            ' 17 = Digits fade (5)
-    gosub 8010                   ' 18 = Calculate current birthdate
+    IO.eewrite(18, 0)            ' 18 = Birthdate month id (0)
     IO.eewrite(19, 0)            ' 19 = worldline prediction triple 1 (0)
     IO.eewrite(20, 0)            ' 20 = worldline prediction triple 2 (0)
+    gosub 8010                   ' 18 = Calculate current birthdate
     print "EEPROM reset."
     print " "
     IO.beep(35)
@@ -744,31 +770,37 @@
     return
 '================================================
 ' Initialize with last birthdate
-' VAR: w: data id of month, g: Month from data
+' VAR: w: data id of month, g: Month from data, eeread(18): Birthdate month id (either 1, 4, 7 or 10)
 8010:
+    print "Initialize birthdate id"
     for i = 1 to 10 step 3
         g = read 50, i
         if g < (IO.getrtc(4)) then w = i ' w = the largest birthday-month which is smaller than the actual
     next i
-    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12
-    if w <> (IO.eeread(18)) then IO.eewrite(18, w) ' 18 = Current birthdate data id
+    if (IO.getrtc(4)) <= 5 then w = 10 ' if actualMonth <= smallest birthdate then birthdate month 12 (birthdate id=10)
+    if w <> (IO.eeread(18)) then IO.eewrite(18, w) ' 18 = Current birthdate month data id
+    print "Birthdate id is most probably ",w
+    gosub 8020
     return
 '================================================
 ' Calculate if birthdate change
-' VAR: g: Month from data, q: Day from data
+' VAR: g: Month from data, q: Day from data, eeread(18): Birthdate month id (either 1, 4, 7 or 10)
 8020:
+    print "Recalculate birthdate id"
     for i = 1 to 10 step 3
         g = read 50, i
         q = read 50, (i+1)
+
         if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(18)) then IO.eewrite(18, i) ' true if the actual month is a birthday-month and on/after birthday
+        print "New Birthdate id is ",(IO.eeread(18))
     next i
     return
 '================================================
 ' Print out EEPROM to Terminal
 8050:
     print "           LED-NIXIE Clock"
-    print "by Vanessa, partially from Doug and Jon"
-    for i = 1 to 18   ' EEPROM data output
+    print "by Vanessa, partially from Doug, Domi and Jon"
+    for i = 1 to 20   ' EEPROM data output
     t = IO.eeread(i)
     print "EEP[";i;"] = ";t
     next i
@@ -1274,6 +1306,8 @@
     IO.setrtc(1, x)        ' Write Minutes
     IO.setrtc(2, y)        ' Write Hours
 13320:
+    gosub 8010
+    gosub 710  ' check for divergence change
     goto 10005 ' return to settings menu
 '================================================
 ' F4: DATE SETUP
@@ -1390,6 +1424,8 @@
     IO.setrtc(4, x + 1)        ' Write Month
     IO.setrtc(3, y + 1)        ' Write Day
 14320: ' exit
+    gosub 8010
+    gosub 710  ' check for divergence change
     goto 10005
 14330: ' non-sane date
     for r = 1 to 15 ' non-sane days in month
@@ -1878,7 +1914,7 @@
 43310:
     IO.eewrite(19, y)
     IO.eewrite(20, x)
-    delay 1000
+    delay 500
 43320:
     goto 190 ' return to main loop
 '================================================
