@@ -1,9 +1,18 @@
 ' *************************************
 ' *      LED-NIXIE Clock Demo         *
-' *  LED-Basic >= 15.1.15 required    *
-' *  modified by Vanessa Ver. 2.02    *
+' *  LED-Basic >= 15.2.9 required     *
+' *  modified by Vanessa Ver. 2.15    *
+' *  partially from CJ Ver. C2.10.05  *
 ' *  partially from Doug's ver.D1.02  *
 ' *  partially from Jon's ver.J2.02   *
+' *************************************
+' *  Ver. C2.10.05 CJ´s edits:        *
+' *  Changed default beep             *
+' *  Added beep at startup            *
+' *  Added dedicated alarm sound      *
+' *  Increased light sensor impact    *
+' *  Extended nightmode features      *
+' *  Added extra long button press    *
 ' *************************************
 '
 ' Operations manual:
@@ -13,6 +22,13 @@
 ' press and hold the button until unit beeps.
 '
 ' Usage:
+'
+' Three Button Modes:
+' – Short press.
+' – Long press: hold the button until you’ll hear a beep, then release it.
+' – Extra long press: hold the button until you’ll hear a beep, keep holding it you hear a second beep*:
+'   The clock toggles manually between night/day mode.
+'   * low beep = nightmode off; high beep = nightmode on
 '
 ' Turn the knob to adjust the display colour.(0-9 solid colour, 10 white, 11 incandecent,
 ' 12-14 multi colour). Short press knob to switch between Clock and Date display,
@@ -83,9 +99,20 @@
 ' System 7: Digit fade mode (default 3)
 '                1..5 = digit fade duration
 '                0 = off
+' System 8: Set the Night mode duration
+'        if begin and end are the same, Night mode is disabled.
+'                Short press changes between begin hour, begin minute (yellow)
+'                long press saves, then -->
+'                Short press changes between end hour, end minute (green)
+'                long press saves
+' System 9: adjust nightmode brightness (default 1)
+'                1..15 = brightness level,
+'                0 = automatic brightness (set using sensor)
+'
 '
 ' All settings remain in case of power failure (EEPROM).
 ' The alarm is prioritised over the timer and stopwatch.
+' Softwareversion check on startup.
 '
 ' Slot machine mode: at 4, 8, 14, 18, 24... minutes past the hour, LEDs are lit
 ' at random for 10 seconds.
@@ -95,67 +122,79 @@
 ' cycles through 9...8...7... ...0. If on, Fade mode has no function !
 ' When alarm is On, alarm time displays twice every ten minutes (minutes 02, 06,
 ' 12, 16, 22...) in red.
-' Fade mode: Digits are fading depending on value. NOT working when Second flipping
-' mode is on !
+' Fade mode: Digits are fading depending on value. NOT working when Second flipping mode is on !
+' Night mode: (seperate colour & brightness settings)
+'        if begin and end are the same, Night mode is disabled.
+'        During Night mode on: Partymode, alarm time display and Slot machine are disabled.
+'
 '
 ' If connected to a PC running LED-Basic, the current EEPROM values are
 ' displayed on the screen at program start for debugging purposes.
 '
 '******************************************************************************
-### L80 CGRB P0 S2 M92 F40
+### L80 CGRB P1 S2 M92 F40
 ' Set initial EEPROM state (for testing, uncomment to set on run)
-'    IO.eewrite(1, 11)            ' 1 = Time Colour      (11)
-'    IO.eewrite(2, 5)             ' 2 = Date Colour       (5)
-'    IO.eewrite(3, 1)             ' 3 = Beep              (1)
-'    IO.eewrite(4, 12)            ' 4 = Brightness       (12)
-'    IO.eewrite(5, 0)             ' 5 = Alarm             (0)
-'    IO.eewrite(6, 12)            ' 6 = Alarm Hour       (12)
-'    IO.eewrite(7, 0)             ' 7 = Alarm Minute      (0)
-'    IO.eewrite(8, 0)             ' 8 = Auto Date Display (0)
-'    IO.eewrite(9, 0)             ' 9 = Party Mode        (0)
-'    IO.eewrite(10, 0)            ' 10 = Time Offset      (0)
-'    IO.eewrite(11, 1)            ' 11 = Time Offset +/-  (1)
-'    IO.eewrite(12, 2)            ' 12 = Min Auto Bright  (2)
-'    IO.eewrite(13, 0)            ' 13 = Slot Machine     (0)
-'    IO.eewrite(14, 1)            ' 14 = 24 Hour Clock(1)
-'    IO.eewrite(15, 0)            ' 15 = Seconds flip     (0)
-'    IO.eewrite(16, 0)            ' 16 = Date format      (0)
-'    IO.eewrite(17, 3)            ' 17 = Digits fade      (3)
+'    IO.eewrite(0, 215)           ' 0 = Softwareversion
+'    IO.eewrite(1, 11)            ' 1 = Time Colour           (11)
+'    IO.eewrite(2, 5)             ' 2 = Date Colour            (5)
+'    IO.eewrite(3, 1)             ' 3 = Beep                   (1)
+'    IO.eewrite(4, 12)            ' 4 = Brightness            (12)
+'    IO.eewrite(5, 0)             ' 5 = Alarm                  (0)
+'    IO.eewrite(6, 12)            ' 6 = Alarm Hour            (12)
+'    IO.eewrite(7, 0)             ' 7 = Alarm Minute           (0)
+'    IO.eewrite(8, 0)             ' 8 = Auto Date Display      (0)
+'    IO.eewrite(9, 0)             ' 9 = Party Mode             (0)
+'    IO.eewrite(10, 0)            ' 10 = Time Offset           (0)
+'    IO.eewrite(11, 1)            ' 11 = Time Offset +/-       (1)
+'    IO.eewrite(12, 2)            ' 12 = Min Auto Bright       (2)
+'    IO.eewrite(13, 0)            ' 13 = Slot Machine          (0)
+'    IO.eewrite(14, 1)            ' 14 = 24 Hour Clock         (1)
+'    IO.eewrite(15, 0)            ' 15 = Seconds flip          (0)
+'    IO.eewrite(16, 0)            ' 16 = Date format           (0)
+'    IO.eewrite(17, 3)            ' 17 = Digits fade           (3)
+'    IO.eewrite(18, 0)            ' 18 = Nightmode             (0)
+'    IO.eewrite(19, 0)            ' 19 = Begin Nightmode Hour  (0)
+'    IO.eewrite(20, 0)            ' 20 = Begin Nightmode Minute(0)
+'    IO.eewrite(21, 0)            ' 21 = End Nightmode Hour    (0)
+'    IO.eewrite(22, 0)            ' 22 = End Nightmode Minute  (0)
+'    IO.eewrite(23, 0)            ' 23 = Nightmode Time Colour (0)
+'    IO.eewrite(24, 0)            ' 24 = Nightmode Date Colour (0)
+'    IO.eewrite(25, 1)            ' 25 = Nightmode Brightness  (1)
 '
 ' Nixie Digit Index
-10: data 5, 0, 6, 1, 7, 2, 8, 3, 9, 4
+10: data 5,0,6,1,7,2,8,3,9,4
 '
 ' Colour Index (0..14)
-20: data 5, 20, 50, 90, 130, 160, 200, 260, 300, 340, 1000, 1001, 1002, 1003, 1004
+20: data 5,20,50,90,130,160,200,260,300,340,1000,1001,1002,1003,1004
 '
 ' Brightness Table
-30: data 0, 3, 6, 9, 16, 25, 37, 51, 68, 87, 109, 133, 160, 189, 221, 255
+30: data 0,3,6,9,16,25,37,51,68,87,109,133,160,189,221,255
 '
 ' Music Timer / Stopwatch max :-)
-40: data 13, 200, 15, 200, 17, 200, 13, 200, 13, 200, 15, 200, 17, 200, 13,
-    data 200, 17, 200, 18, 200, 20, 400, 17, 200, 18, 200, 20, 400
+40: data 13,200,15,200,17,200,13,200,13,200,15,200,17,200,13
+    data 200,17,200,18,200,20,400,17,200,18,200,20,400
 '   alternate uk version
-'40: data 15, 15, 15, 18, 18, 18, 19, 19, 20, 20, 20, 21, 21, 21, 22, 22
-'    data 27, 25, 0, 0, 20, 22, 0, 0, 32, 30, 27, 30, 0, 0, 37
+'40: data 15,15,15,18,18,18,19,19,20,20,20,21,21,21,22,22
+'    data 27,25,0,0,20,22,0,0,32,30,27,30,0,0,37
 '
 ' LED-INDEX SET
-    led.ihsv(0, 0,   0,   0)  'off
-    led.ihsv(2, 0,   0, 128)  'white (settings)
-    led.ihsv(3, 5, 255, 128)  'red (set alarm)
-    led.ihsv(4, 110, 254, 96) 'green (timer / stopwatch)
-    led.ihsv(5, 37, 254, 96)  'yellow (set date / time)
-    led.ihsv(6, 240, 255, 128)'blue (system menu)
+    led.ihsv(0, 0, 0, 0)      ' off
+    led.ihsv(2, 0, 0, 128)    ' white (settings)
+    led.ihsv(3, 2, 255, 128)  ' red (set alarm)
+    led.ihsv(4, 110, 254, 96) ' green (timer / stopwatch)
+    led.ihsv(5, 37, 254, 96)  ' yellow (set date / time)
+    led.ihsv(6, 240, 255, 128)' blue (system menu)
     LED.blackout() ' turn off all LEDs
 '
 ' Version
     LED.iled(2, 50 + read 10, 2)
-    LED.iled(2, 60 + read 10, 0)
-    LED.iled(2, 70 + read 10, 2)
+    LED.iled(2, 60 + read 10, 1)
+    LED.iled(2, 70 + read 10, 5)
     LED.show()
     delay 2000
 '
 ' EEPROM INIT
-    if IO.keystate() = 1 then gosub 8000
+    if (IO.eeread(0)) <> 215 or IO.keystate() = 1 gosub 8000 'first time or reset
 ' EEPROM Output to Terminal
     gosub 8050
 '
@@ -180,65 +219,99 @@
 '==== MAIN LOOP =================================
 100:
     t = IO.getenc()  ' Read Encoder
-    if t = c then goto 105
+    if t = c goto 105
     c = t            ' color set (knob turned)
     z = 0            ' counter reset
 105:
-    a = IO.getrtc(2) ' hours
-    s = IO.getrtc(1) ' minutes
     r = IO.getrtc(0) ' seconds
+    s = IO.getrtc(1) ' minutes
+    a = IO.getrtc(2) ' hours
     if r = 0 then x = 0 ' reset alarm silencer
-    if (IO.eeread(5)) = 1 and x = 0 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then gosub 9105 ' alarm so ringing
-    if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(13)) = 1 then gosub 4000 ' random (slot machine)
-    if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
-    if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
-    if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and r = 2 gosub 700 ' show alarm time
+    if r = 0 and (IO.eeread(19)) = (IO.eeread(21)) and (IO.eeread(20)) = (IO.eeread(22)) goto 108 ' no night duration
+    if r = 0 and (IO.eeread(19)) = a and (IO.eeread(20)) = s gosub 300 ' nightmode on
+    if r = 0 and (IO.eeread(21)) = a and (IO.eeread(22)) = s gosub 305 ' nightmode off
 108:
-    gosub 9000         ' Get key. 0 = none 1 = short press 2 = long press
-    if k = 0 then goto 200 ' do nothing
-    if k = 1 then goto 110 ' short press: change display mode
-    if k = 2 and m = 1 then goto 10100 ' system menu
-    if k = 2 then goto 10000 ' settings menu
-    goto 100 ' shouldn't ever be reached but will re-cycle if so
+    if x = 0 and (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s gosub 9150 ' alarm so ringing
+    if s % 10 = 4 or s % 10 = 8 and r = 2 and m = 0 and (IO.eeread(18)) = 0 and (IO.eeread(13)) = 1 gosub 4000 ' random (slot machine)
+    if s % 10 = 1 or s % 10 = 3 or s % 10 = 5 or s % 10 = 7 or s % 10 = 9 and m = 0 and (IO.eeread(18)) = 0 and (IO.eeread(9)) = 1 and r = 2 goto 2900 ' party mode
+    if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
+    if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and (IO.eeread(18)) = 0 and r = 2 gosub 700 ' show alarm time
+    gosub 9000        ' Get key. 0 = none 1 = short press 2 = long press 3 = extra long press
+    if k = 1 goto 110 ' short press: change display mode
+    if k = 3 and (IO.eeread(18)) = 1 goto 310 ' extra long press: nightmode manual off
+    if k = 3 and (IO.eeread(18)) = 0 goto 315 ' extra long press: nightmode manual on
+    if k = 2 and m = 1 goto 10100 ' system menu
+    if k = 2 goto 10000 ' settings menu
+    goto 200 ' k = 0
 110:
 '==== SHORT PRESS: MODE SWITCH ====
-    gosub 9100         ' BEEP
-    if m = 0 then goto 180 ' change time to date display
-    if m = 1 then goto 185 ' change date to time display
-    goto 100 ' shouldn't ever be reached but will recycle
+    gosub 9100        ' BEEP
+    if m = 0 goto 180 ' change time to date display
+    if m = 1 goto 185 ' change date to time display
 180: ' change from time to date display
-    if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current time colour to EEPROM
+    if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current time colour to EEPROM
+    if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode time colour to EEPROM
     m = 1               ' change to date mode
     if k = 1 then x = 1 ' silence alarm when spinner pressed
     goto 190            ' done
 185: ' change from date to time display
-    if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c)' saves current date display to EEPROM
-    m = 0               ' mode change to time
+    if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
+    if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
+    m = 0               ' change to time mode
 190: 'NB: also entry point from start
-    c = IO.eeread(m + 1) ' sets colour from eeprom
+    if (IO.eeread(18)) = 0 then c = IO.eeread(m + 1) ' sets colour from eeprom if nightmode off
+    if (IO.eeread(18)) = 1 then c = IO.eeread(m + 23) ' sets colour from eeprom if nightmode on
     IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
     z = 0 ' reset counter
 200:
-    if z & 15 <> 0 then goto 210 ' only check brightness and offset once per 15 cycles
-    i = IO.getldr() + IO.eeread(12) ' measured brightness + minimum overall brightness
+    if z & 15 <> 0 goto 210 ' only check brightness once per 15 cycles
+205:
+    i = (IO.getldr() * 2) + IO.eeread(12) ' measured brightness + minimum overall brightness
     if i > 254 then i = 254 ' do not exceed max brightness
     if (IO.eeread(4)) = 0 then v = i else v = read 30, IO.eeread(4)' Set brightness from auto or EEPROM
+    if (IO.eeread(18)) = 1 and (IO.eeread(25)) = 0 then v = i ' Set nighmode brightness from sensor
+    if (IO.eeread(18)) = 1 and (IO.eeread(25)) <> 0 then v = read 30, IO.eeread(25) ' Set nighmode brightness from EEPROM
 210:
-    LED.irange(0, 0, 79) ' Clear display
-    if m <> 0 then goto 220 ' If date mode, skip time display
+    LED.iall(0) ' Clear display
+    if m <> 0 goto 220 ' If date mode, skip time display
     gosub 500      ' Show time - set LEDs
     LED.show()     ' Show time - show LEDs
     goto 100       ' Back to beginning of loop
 220:
-    if m <> 1 then goto 100 ' If not date mode, re-enter loop
+    if m <> 1 goto 100 ' If not date mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
-    if z > 120 then goto 185  ' Return to TIME display after ca. 3sec
+    if z > 120 goto 185  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
+'================================================
+' AUTO NIGHTMODE TOGGLE
+300:
+    IO.eewrite(18, 1) ' nightmode on
+    c = IO.eeread(m + 23)
+    IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
+    return
+305:
+    IO.eewrite(18, 0) ' nightmode off
+    c = IO.eeread(m + 1)
+    IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
+    return
+' MANUAL NIGHTMODE TOGGLE
+310:
+    if (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode colour to EEPROM
+    IO.eewrite(18, 0)    ' nightmode off
+    m = 0                ' always go back to time display
+    gosub 9120           ' low beep
+    goto 190
+315:
+    if (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current colour to EEPROM
+    IO.eewrite(18, 1)     ' nightmode on
+    m = 0                 ' always go back to time display
+    gosub 9100            ' beep
+    goto 190
 '================================================
 ' handle flip fade animation
 400:
-    if g = 0 then goto 410
+    if g = 0 goto 410
     b = v - l ' set the subtraction value to our transition brightness
     if p <> 0 or n <> 0 or (IO.eeread(14)) = 1 gosub 1000
     b = l
@@ -252,23 +325,22 @@
 ' VAR: n, p, j
 500:
     g = 0
-    s = IO.getrtc(0) ' seconds
-    if s % 10 = 9 and (IO.eeread(15)) = 1 then goto 510  ' seconds flip
+    if r % 10 = 9 and (IO.eeread(15)) = 1 goto 510  ' seconds flip
     if (IO.eeread(17)) > 0 and (IO.eeread(15)) = 0 then g = 1 ' digit fade if not second flip
-    n = s % 10
+    n = r % 10
     p = 70
     ' calculate the flip brightness even if we're not using it
     if u <> n then l = 0
     if u <> n then u = n
     i = 6 - IO.eeread(17) ' fade value
-    l = l + 1 + i * (v / 25)  ' increase the level of transition brightness
+    l = l + 1 + i * (v / 50)  ' increase the level of transition brightness
     if l > v then l = v   ' don't increase the level beyond the set brightness
     ' finished calculating brightness
     i = n - 1
     if i < 0 then i = 9
     gosub 400        ' display seconds 1s
-    if g = 1 and s % 10 = 0 then g = 1 else g = 0' 10s seconds flip if our 1s is a 0
-    n = s / 10
+    if g = 1 and r % 10 = 0 then g = 1 else g = 0' 10s seconds flip if our is a 0
+    n = r / 10
     p = 60
     i = n - 1
     if i < 0 then i = 5
@@ -276,7 +348,7 @@
     j = 79
     goto 520          ' to minutes
 510:
-    n = s / 10        ' Seconds Flip routine
+    n = r / 10        ' Seconds Flip routine
     p = 60
     gosub 1000        ' Seconds 10
     n = j % 10
@@ -285,8 +357,7 @@
     j = j - 1
     delay 98          ' approx 0.1 seconds between flips
 520:
-    if g = 1 and s / 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
-    s = IO.getrtc(1)  ' Minutes
+    if g = 1 and r / 10 = 0 then g = 1 else g = 0 'decide if we need to fade this number
     n = s % 10
     p = 40
     i = n - 1
@@ -318,7 +389,7 @@
     if i < 0 and (IO.eeread(14)) = 0 then i = 1
     if i < 0 and (IO.eeread(14)) = 1 then i = 2
     gosub 400        ' Hours 10
-    z = z + 1
+    if z < 32761 then z = z + 1 else z = 0
     return
 '================================================
 ' SHOW DATE
@@ -345,44 +416,45 @@
     n = s % 10
     if (IO.eeread(16)) = 2 then p = 10 else p = 70 ' yYmmdd, ddmmyY/mmddyY
     gosub 1000        ' Year units
+    s = IO.getrtc(1) ' minutes reset to s
     z = z + 1
     return
 '================================================
 ' SHOW Alarm
 ' VAR: n, p, s, i
 700:
-    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm ringing so don't display alarm time
-    LED.irange(0, 0,79)
-    s = IO.eeread(6)
+    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s return ' alarm ringing so don't display alarm time
+    LED.iall(0) ' Clear display
+    t = IO.eeread(6)
     for i = 70 downto 10 step 10
-     LED.iled(3, i + read 10, s / 10)
+     LED.iled(3, i + read 10, t / 10)
      LED.show()
      delay 200
-     LED.iled(0, i + read 10, s / 10)
+     LED.iled(0, i + read 10, t / 10)
     next i
-    LED.iled(3,     read 10, s / 10)
+    LED.iled(3,     read 10, t / 10)
     for i = 70 downto 20 step 10
-     LED.iled(3, i + read 10, s % 10)
+     LED.iled(3, i + read 10, t % 10)
      LED.show() ' display
      delay 200 ' cycle 1/5 second
-     LED.iled(0, i + read 10, s % 10)
+     LED.iled(0, i + read 10, t % 10)
     next i
-    LED.iled(3, 10 + read 10, s % 10)
-    s = IO.eeread(7)  ' alarm minutes
+    LED.iled(3, 10 + read 10, t % 10)
+    t = IO.eeread(7)  ' alarm minutes
     for i = 70 downto 30 step 10
-     LED.iled(3, i + read 10, s / 10)
+     LED.iled(3, i + read 10, t / 10)
      LED.show()
      delay 200
-     LED.iled(0, i + read 10, s / 10)
+     LED.iled(0, i + read 10, t / 10)
     next i
-    LED.iled(3,30 + read 10, s / 10)
+    LED.iled(3,30 + read 10, t / 10)
     for i = 70 downto 40 step 10
-     LED.iled(3, i + read 10, s % 10)
+     LED.iled(3, i + read 10, t % 10)
      LED.show()
      delay 200
-     LED.iled(0, i + read 10, s % 10)
+     LED.iled(0, i + read 10, t % 10)
     next i
-    LED.iled(3, 40 + read 10, s % 10)
+    LED.iled(3, 40 + read 10, t % 10)
     LED.show()
     delay 200
     LED.iled(3, 70 + read 10,0)
@@ -400,74 +472,74 @@
 ' Character display routine for date / time (using set colour mode)
 1000:
     t = read 20, c ' read colour value from index
-    if t > 360 then goto 1010
+    if t > 360 goto 1010
     LED.ihsv(1, t, 255, v - b) ' set "standard 1 colour" at brightness V
     goto 1090
 1010:
-    if t <> 1000 then goto 1015 ' position 10 = white
+    if t <> 1000 goto 1015 ' position 10 = white
     LED.ihsv(1, 0, 0, v - b)
     goto 1090
 1015:
-    if t <> 1001 then goto 1020 ' position 11 = incandecent
+    if t <> 1001 goto 1020 ' position 11 = incandecent
     LED.ihsv(1, 25, 205, v - b)
     goto 1090
 1020:
-    if t <> 1002 then goto 1030 ' position 12 = multi-colour
+    if t <> 1002 goto 1030 ' position 12 = multi-colour
     LED.ihsv(1, h, 255, v - b)
     h = (p * 8 + z) % 360 ' set "standard 1" as 8* position + counter mod 360
     goto 1090
 1030:
-    if t <> 1003 then goto 1040 ' position 13 = gently cycling
+    if t <> 1003 goto 1040 ' position 13 = gently cycling
     LED.ihsv(1, h, 255, v - b) ' set "standard 1" as counter/4 mod 360
     h = (z / 4) % 360
     goto 1090
 1040:
     'we assume t = 1004 = position 14 = gently cycling 2
     led.ihsv(1, h, 255, v - b)
-    h = ((2 * z) + (2 * (50 - p))) % 360
+    h = (2 * z + (2 * (50 - p))) % 360
 1090:
     LED.iled(1, p + read 10, n) ' show character
     return
 '================================================
 ' party mode
 2900:
-    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then goto 100 ' alarm ringing so abort
+    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s goto 100 ' alarm ringing so abort
     i = random ' choose one of animations at random
-    if i <= 4096 then gosub 3000 ' party mode effect 0
-    if i > 4096 and i <= 8192 then gosub 3100 ' party mode effect 1
-    if i > 8192 and i <= 12288 then gosub 3200 ' party mode effect 2
-    if i > 12288 and i <= 16384 then gosub 3300 ' party mode effect 3
-    if i > 16484 and i <= 20480 then gosub 3400 ' party mode effect 4
-    if i > 20480 and i <= 24576 then gosub 3500 ' party mode effect 5
-    if i > 24576 and i <= 28672 then gosub 3600 ' party mode effect 6
-    if i > 28672 then gosub 3700 ' party mode effect 7
+    if i <= 4096 gosub 3000 ' party mode effect 0
+    if i > 4096 and i <= 8192 gosub 3100 ' party mode effect 1
+    if i > 8192 and i <= 12288 gosub 3200 ' party mode effect 2
+    if i > 12288 and i <= 16384 gosub 3300 ' party mode effect 3
+    if i > 16484 and i <= 20480 gosub 3400 ' party mode effect 4
+    if i > 20480 and i <= 24576 gosub 3500 ' party mode effect 5
+    if i > 24576 and i <= 28672 gosub 3600 ' party mode effect 6
+    if i > 28672 gosub 3700 ' party mode effect 7
     k = IO.getkey() ' key reset if pressed during Party
     goto 100 ' main loop
 '............................................................
 3000: ' pixels turning off and on at random, random colours
-     for n = 1 to 300
-        r = random % 360 ' colour
-        a = random % 80  ' position
-        led.lhsv(a, r, 255, v)    ' set colour
-        if a - 1 >= 0 then LED.iled(0, a - 1) ' turn off pixel below current
-        led.show()
-        delay 50
-     next n
-     return
+    for n = 1 to 300
+     r = random % 360 ' colour
+     a = random % 80  ' position
+     led.lhsv(a, r, 255, v)    ' set colour
+     if a - 1 >= 0 then LED.iled(0, a - 1) ' turn off pixel below current
+     led.show()
+     delay 50
+    next n
+    return
 '............................................................
 3100: ' two pixels of two random colours cycling and crossing each other
     for n = 1 to 3
 3110:
     a = Random % 360
     r = Random % 360
-    if a = r then goto 3110
-        for i = 0 to 80
-            LED.iall(0)
-            led.lhsv(i, a, 255, v)       ' Colour
-            led.lhsv(80 - i, r, 255, v) ' Colour
-           led.show()
-           delay 80
-        next i
+    if a = r goto 3110
+     for i = 0 to 80
+      LED.iall(0)
+      led.lhsv(i, a, 255, v)      ' Colour
+      led.lhsv(80 - i, r, 255, v) ' Colour
+      led.show()
+      delay 80
+     next i
     next n
     return
 '............................................................
@@ -477,13 +549,13 @@
     n = Random % 360
     z = Random % 360
     for i = 0 to 249
-        LED.iall(0)
-        led.lhsv(i % 80, z, 255, v)
-        led.lhsv(80 - ((i + 1) % 80), a, 255, v)
-        led.lhsv((i + 9) % 80, r, 255, v)
-        led.lhsv(80 - ((i + 10) % 80), n, 255, v)
-        led.show()
-        delay 80
+     LED.iall(0)
+     led.lhsv(i % 80, z, 255, v)
+     led.lhsv(80 - ((i + 1) % 80), a, 255, v)
+     led.lhsv((i + 9) % 80, r, 255, v)
+     led.lhsv(80 - ((i + 10) % 80), n, 255, v)
+     led.show()
+     delay 80
     next i
     return
 '............................................................
@@ -491,62 +563,64 @@
     LED.iall(0)
     z = Random % 360
     for n = 0 to 5
-      for i = 80 downto 0
+     for i = 80 downto 0
       if n % 2 = 0 then led.lhsv(i, (z + n * i) % 360, 255, v) else led.lhsv(60 - i,(z + n * i) % 360, 255, v)
       led.show()
-      next i
+     next i
     next n
     return
 '............................................................
 3400: ' "turbulent" rainbow over all pixels, speeding up
     h = random % 360
     for i = 1 to 500
-    LED.rainbow(h, 255, v, 0, 80, 3)
-    LED.show()
-    h = (h + i / 10) % 360
+     LED.rainbow(h, 255, v, 0, 80, 3)
+     LED.show()
+     h = (h + i / 10) % 360
     next i
     return
 '............................................................
 3500: ' all pixels solid varying, varying in brightness.
     for z = 1 to 350
-    i = random % 100
-    if i < 75 goto 3565
-    h = ((random % 256) * v) / 256
-    LED.ihsv(9,(i * h) % 360, 255, h)
-    LED.iall(9)
+     i = random % 100
+     if i < 75 goto 3565
+     h = ((random % 129) * v) / 128
+     LED.ihsv(9,(i * h) % 360, 255, h)
+     LED.iall(9)
 3565:
-    LED.show()
+     LED.show()
     next z
     return
 '............................................................
 3600: ' all pixels white, varying in brightness.(TV mode)
     for z = 1 to 350
-    i = random % 100
-    if i < 75 goto 3665
-    h = ((random % 256) * v) / 256
-    LED.ihsv(9, 0, 0, h)
-    LED.iall(9)
+     i = random % 100
+     if i < 75 goto 3665
+     h = ((random % 129) * v) / 128
+     LED.ihsv(9, 0, 0, h)
+     LED.iall(9)
 3665:
-    LED.show()
+     LED.show()
     next z
     return
 '............................................................
-3700: ' cycling through all LEDs 0-79 in increasing colours
-    LED.blackout()
+3700: ' cycling through all LEDs 0-79 in increasing colours with random white
+    LED.ihsv(9, 0, 0, v)
     g = 0 'Test variable, to exit routine
 3701: 'Pixel counter index
-    data 5, 0, 6, 1, 7, 2, 8, 3, 9, 4,
-    data 15, 10, 16, 11, 17, 12, 18, 13, 19, 14,
-    data 25, 20, 26, 21, 27, 22, 28, 23, 29, 24,
-    data 35, 30, 36, 31, 37, 32, 38, 33, 39, 34,
-    data 45, 40, 46, 41, 47, 42, 48, 43, 49, 44,
-    data 55, 50, 56, 51, 57, 52, 58, 53, 59, 54,
-    data 65, 60, 66, 61, 67, 62, 68, 63, 69, 64,
-    data 75, 70, 76, 71, 77, 72, 78, 73, 79, 74,
+    data 5,0,6,1,7,2,8,3,9,4,
+    data 15,10,16,11,17,12,18,13,19,14,
+    data 25,20,26,21,27,22,28,23,29,24,
+    data 35,30,36,31,37,32,38,33,39,34,
+    data 45,40,46,41,47,42,48,43,49,44,
+    data 55,50,56,51,57,52,58,53,59,54,
+    data 65,60,66,61,67,62,68,63,69,64,
+    data 75,70,76,71,77,72,78,73,79,74,
 3702: 'Main loop
     for i = 1 to 79
-     led.ihsv(1,((i + g) * 7) % 360,255,v)
-     LED.iled(1,read 3701,i)
+     if i % 20 = 0 then h = random % 4
+     if i % 20 = 0 then LED.irange(9, 10 * h, 10 * h + 9)
+     led.ihsv(1, ((i + g) * 7) % 360, 255, v)
+     LED.iled(1, read 3701, i)
      LED.show()
      g = g + 1
     next i ' cycle through colours
@@ -556,9 +630,9 @@
 ' SHOW Slot machine
 ' VAR: s, n, p, i
 4000:
-    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s then return ' alarm sounding so quit
+    if (IO.eeread(5)) = 1 and (IO.eeread(6)) = a and (IO.eeread(7)) = s return ' alarm sounding so quit
     for i = 1 to 100
-     LED.irange(0, 0, 79) ' blank
+     LED.iall(0) ' Clear display
      s = random
 
      n = ((s % 1000)/100) + 1
@@ -591,13 +665,14 @@
      delay 10 + i * 2 ' increasingly slow as time goes on
     next i
     s = IO.getrtc(1) ' temporarily used for random number, reset as minutes
-    k = IO.getkey() ' key reset if pressed during Slot machine
+    k = IO.getkey()  ' key reset if pressed during Slot machine
     return
 '================================================
 ' EEPROM INIT
 8000:
     print "Resetting EEPROM..."
     print " "
+    IO.eewrite(0, 215)           ' 0 = Softwareversion
     IO.eewrite(1, 11)            ' 1 = Time Colour (11)
     IO.eewrite(2, 5)             ' 2 = Date Colour (5)
     IO.eewrite(3, 1)             ' 3 = Beep (1)
@@ -614,7 +689,15 @@
     IO.eewrite(14, 1)            ' 14 = 24 Hour Clock (1)
     IO.eewrite(15, 0)            ' 15 = Seconds flip (0)
     IO.eewrite(16, 0)            ' 16 = Date format (0)
-    IO.eewrite(17, 3)            ' 17 = Digits fade (5)
+    IO.eewrite(17, 3)            ' 17 = Digits fade (3)
+    IO.eewrite(18, 0)            ' 18 = Nightmode (0)
+    IO.eewrite(19, 0)            ' 19 = Begin Nightmode Hour (0)
+    IO.eewrite(20, 0)            ' 20 = Begin Nightmode Minute (0)
+    IO.eewrite(21, 0)            ' 21 = End Nightmode Hour (0)
+    IO.eewrite(22, 0)            ' 22 = End Nightmode Minute (0)
+    IO.eewrite(23, 0)            ' 23 = Nightmode Time Colour (0)
+    IO.eewrite(24, 0)            ' 24 = Nightmode Date Colour (0)
+    IO.eewrite(25, 1)            ' 25 = Nightmode Brightness (1)
     print "EEPROM reset."
     print " "
     IO.beep(35)
@@ -624,42 +707,73 @@
 '================================================
 ' Print out EEPROM to Terminal
 8050:
-    print "           LED-NIXIE Clock"
-    print "by Vanessa, partially from Doug and Jon"
-    for i = 1 to 17   ' EEPROM data output
-    t = IO.eeread(i)
-    print "EEP[";i;"] = ";t
+    print "                LED-NIXIE Clock"
+    print "by Vanessa, partially from Christoph, Doug and Jon"
+    for i = 0 to 25   ' EEPROM data output
+     t = IO.eeread(i)
+     print "EEP[";i;"] = ";t
     next i
     return
 '================================================
 ' GETKEY
 ' VAR: k, i, RET: k
-' k: 0 = No Key, 1 = Short, 2 = LONG press
+' k: 0 = No Key, 1 = Short, 2 = LONG press, 3 = EXTRA LONG press
 9000:
     k = IO.getkey()
-    if k = 0 then goto 9020
+    if k = 0 return
     i = 0
 9010:
     k = IO.keystate()
-    if k = 0 then goto 9015
+    if i < 50 and k = 0 goto 9015
+    if i = 50 gosub 9110     ' BEEP MEDIUM
     delay 10
     i = i + 1
-    if i < 50 then goto 9010
-    k = 2
+    if i < 150 and k = 1 goto 9010
+    if i >= 150 goto 9020
+    k = 2        ' LONG PRESS
     return
 9015:
     k = 1        ' SHORT PRESS
+    return
 9020:
+    k = 3        ' EXTRA LONG PRESS
     return
 '================================================
-' BEEP
+' BEEP HIGH
 9100:
-    if (IO.eeread(3)) = 0 then goto 9110 ' no beep if set silent
-9105: ' actual beep
-    IO.beep(35)
-    delay 250
+    if (IO.eeread(3)) = 0 return ' no beep if set silent
+    IO.beep(25)
+    delay 25
     IO.beep(0)
+    return
+' BEEP MEDIUM
 9110:
+    if (IO.eeread(3)) = 0 return ' no beep if set silent
+    IO.beep(15)
+    delay 25
+    IO.beep(0)
+    return
+' BEEP LOW
+9120:
+    if (IO.eeread(3)) = 0 return ' no beep if set silent
+    IO.beep(5)
+    delay 25
+    IO.beep(0)
+    return
+' ALARM
+9150:
+    IO.beep(30)
+    delay 50
+    IO.beep(0)
+    delay 100
+    IO.beep(30)
+    delay 50
+    IO.beep(0)
+    delay 100
+    IO.beep(20)
+    delay 50
+    IO.beep(0)
+    delay 700
     return
 '================================================
 ' Settings menu
@@ -672,33 +786,33 @@
     IO.setenc(p, 9, 0) ' Set Encoder (Spinner) to give 0-9 positions
 10010:
     t = IO.getenc()    ' Read Encoder
-    if t = p then goto 10020
+    if t = p goto 10020
     p = t
     z = 0              ' counter reset
 10020:
     gosub 9000         ' GETKEY
-    if k = 0 then goto 10050
-    if k = 1 then goto 10060
+    if k = 0 goto 10050
+    if k = 1 goto 10060
     gosub 9100         ' BEEP. K = 2 so long press so exit
     goto 99            ' long press so exit
 10050:
-    LED.irange(0, 0, 79) ' blank all the pixels
+    LED.iall(0) ' Clear display
     if z & 15 < 11 then LED.iled(2, read 10, p) ' White first pixel number flashes.
     LED.show()
     z = z + 1
-    if z > 300 then goto 99    ' Time-out, back to time display
+    if z > 300 goto 99    ' Time-out, back to time display
     goto 10010
 10060:
-    if p = 0 then goto 12000 ' F0: Beep on/off
-    if p = 1 then goto 12400 ' F1: 12/24 hour time display
-    if p = 2 then goto 13000 ' F2: Time set
-    if p = 3 then goto 12600 ' F3: Date format
-    if p = 4 then goto 14000 ' F4: Date set
-    if p = 5 then goto 15000 ' F5: Alarm on / off
-    if p = 6 then goto 16000 ' F6: Alarm time set
-    if p = 7 then goto 17000 ' F7: Auto date display on / off
-    if p = 8 then goto 18000 ' F8: Timer
-    if p = 9 then goto 19000 ' F9: Stopwatch
+    if p = 0 goto 12000 ' F0: Beep on/off
+    if p = 1 goto 12400 ' F1: 12/24 hour time display
+    if p = 2 goto 13000 ' F2: Time set
+    if p = 3 goto 12600 ' F3: Date format
+    if p = 4 goto 14000 ' F4: Date set
+    if p = 5 goto 15000 ' F5: Alarm on / off
+    if p = 6 goto 16000 ' F6: Alarm time set
+    if p = 7 goto 17000 ' F7: Auto date display on / off
+    if p = 8 goto 18000 ' F8: Timer
+    if p = 9 goto 19000 ' F9: Stopwatch
     goto 10010
 '================================================
 ' System menu
@@ -708,36 +822,36 @@
     p = 0
 10105:
     z = 0 ' counter
-    IO.setenc(p, 7, 0) ' 0-7 options
+    IO.setenc(p, 9, 0) ' 0-9 options
 10110:
     t = IO.getenc()    ' Read Encoder
-    if t = p then goto 10120
+    if t = p goto 10120
     p = t
     z = 0              ' counter reset
 10120:
     gosub 9000         ' GETKEY
-    if k = 0 then goto 10150
-    if k = 1 then goto 10160
+    if k = 0 goto 10150
+    if k = 1 goto 10160
     gosub 9100         ' BEEP
     goto 99            ' long press so exit
 10150:
-    LED.irange(0, 0, 79) ' blank out pixels
+    LED.iall(0) ' Clear display
     if z & 15 < 11 then LED.iled(6, read 10, p) ' Blue menu option Flashing
     LED.show()
     z = z + 1
-    if z > 300 then goto 99    ' RETURN if timed out
+    if z > 300 goto 99    ' RETURN if timed out
     goto 10110
 10160:
-    if p = 0 then goto 11000 ' S0: Brightness
-    if p = 1 then goto 11200 ' S1: Minimum brightness on auto
-    if p = 2 then goto 12100 ' S2: Time offset polarity
-    if p = 3 then goto 11100 ' S3: Time offset n cycles per 32 sek.
-    if p = 4 then goto 20000 ' S4: Party mode on/off
-    if p = 5 then goto 12200 ' S5: Slot machine on/off
-    if p = 6 then goto 12500 ' S6: Seconds flip on/off
-    if p = 7 then goto 15100 ' S7: Digit fade
-    'if p = 8 then goto 19000 ' S8:
-    'if p = 9 then goto 20000 ' S9:
+    if p = 0 goto 11000 ' S0: Brightness
+    if p = 1 goto 11200 ' S1: Minimum brightness on auto
+    if p = 2 goto 12100 ' S2: Time offset polarity
+    if p = 3 goto 11100 ' S3: Time offset n cycles per 32 sek.
+    if p = 4 goto 20000 ' S4: Party mode on/off
+    if p = 5 goto 12200 ' S5: Slot machine on/off
+    if p = 6 goto 12500 ' S6: Seconds flip on/off
+    if p = 7 goto 15100 ' S7: Digit fade
+    if p = 8 goto 21000 ' S8: Night mode duration
+    if p = 9 goto 23000 ' S9: Night mode brightness
     goto 10110
 '================================================
 ' S0: BRIGHTNESS SELECTION
@@ -750,24 +864,24 @@
     IO.setenc(y, 15, 0) ' 15 brightness values
 11010:
     t = IO.getenc()
-    if t = y then goto 11020
+    if t = y goto 11020
     y = t
     z = 0                ' movement so reset counter
 11020:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 11050
+    if k = 0 goto 11050
     gosub 9100        ' BEEP
     goto  11070       ' short press
 11050:
-    LED.irange(0, 0, 79) ' blank everything
-    if z & 15 > 10 then goto 11060 ' (flashing)
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 11060 ' (flashing)
     LED.iled(2, 40 + read 10, y / 10) ' brightness display 10s
     LED.iled(2, 50 + read 10, y % 10) ' brightness units
 11060:
     LED.iled(6, read 10, 0) ' show in System 0 i.e. brightness
     LED.show()
     z = z + 1
-    if z <= 300 then goto 11010 ' timeout
+    if z <= 300 goto 11010 ' timeout
     goto 10105 ' return to system menu without save
 11070:
     if y <> (IO.eeread(4)) then IO.eewrite(4, y) ' Write Brightness Value
@@ -783,17 +897,17 @@
     IO.setenc(y, 510, 0) ' choices 0-510
 11110:
     t = IO.getenc()
-    if t = y then goto 11120
+    if t = y goto 11120
     y = t
     z = 0
 11120:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 11150
+    if k = 0 goto 11150
     gosub 9100        ' BEEP
-    goto  11170       ' short click I assume
+    goto  11170       ' short click
 11150:
-    LED.irange(0, 0, 79) ' blank display
-    if z & 15 > 10 then goto 11160 ' light pixels only 10 in 15 cycles'
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 11160 ' light pixels only 10 in 15 cycles'
     LED.iled(2, 30 + read 10, y / 100) ' light setting 100s
     LED.iled(2, 40 + read 10, (y / 10) % 10)  ' light setting 10s
     LED.iled(2, 50 + read 10, y % 10)  ' light setting units
@@ -801,7 +915,7 @@
     LED.iled(6, read 10, 3) ' set first pixel blue 3 to indicate menu place
     LED.show()
     z = z + 1
-    if z <= 300 then goto 11110 ' timeout
+    if z <= 300 goto 11110 ' timeout
     goto 10105 ' return to system menu without save
 11170:
     if y <> (IO.eeread(10)) then IO.eewrite(10, y) ' Write Offset Value to EE
@@ -817,17 +931,17 @@
     IO.setenc(y, 15, 0)  ' range from 0 to 15
 11210:
     t = (IO.getenc())
-    if t = y then goto 11220
+    if t = y goto 11220
     y = t
     z = 0
 11220:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 11250
+    if k = 0 goto 11250
     gosub 9100        ' BEEP, short press one assumes
     goto  11270
 11250:
-    LED.irange(0, 0, 79) ' blank out LEDs
-    if z & 15 > 10 then goto 11260 ' light pixels for 10 in 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 11260 ' light pixels for 10 in 15 cycles
     t = y
     LED.iled(2, 40 + read 10, t / 10) ' min brightness 10s
     LED.iled(2, 50 + read 10, t % 10) ' min brightness units
@@ -835,7 +949,7 @@
     LED.iled(6, read 10, 1)    ' system menu blue, 1st pos
     LED.show()
     z = z + 1
-    if z <= 300 then goto 11210 ' time out
+    if z <= 300 goto 11210 ' time out
     goto 10105 ' return to system menu without save
 11270:
     if y <> (IO.eeread(12)) then IO.eewrite(12, y) ' Write Min Brightness Value
@@ -851,23 +965,23 @@
     IO.setenc(y, 1, 0) ' between 0 and 1
 12010:
     t = IO.getenc()
-    if t = y then goto 12020
+    if t = y goto 12020
     y = t
     z = 0
 12020:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12050 ' no key
+    if k = 0 goto 12050 ' no key
     gosub 9100        ' BEEP short press
     goto  12070
 12050:
-    LED.irange(0, 0, 79) ' black out LEDs
-    if z & 15 > 10 then goto 12060 ' light pixel for 10 / 15 cycles (flash)
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12060 ' light pixel for 10 / 15 cycles (flash)
     LED.iled(2, 50 + read 10, y)
 12060:
     LED.iled(3, read 10, 0) ' settings menu 0th option
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12010 ' timeout
+    if z <= 300 goto 12010 ' timeout
     goto 10005 ' return to system menu without save
 12070:
     if y <> (IO.eeread(3)) then IO.eewrite(3, y) ' Write Beep Value
@@ -883,23 +997,23 @@
     IO.setenc(y, 1, 0) ' 0 - 1
 12110:
     t = IO.getenc()
-    if t = y then goto 12120
+    if t = y goto 12120
     y = t
     z = 0 ' reset counter
 12120:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12150 ' no key
+    if k = 0 goto 12150 ' no key
     gosub 9100        ' BEEP short press
     goto  12170
 12150:
-    LED.irange(0, 0, 79) ' blank pixels
-    if z & 15 > 10 then goto 12160 'light pixels 10 cycles in 15
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12160 'light pixels 10 cycles in 15
     LED.iled(2, 50 + read 10, y)
 12160:
     LED.iled(6, read 10, 2) ' blue (system menu) option 2
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12110 ' time out
+    if z <= 300 goto 12110 ' time out
     goto 10105 ' return to system menu without save
 12170:
     if y <> (IO.eeread(11)) then IO.eewrite(11, y) ' Write offset polarity
@@ -915,23 +1029,23 @@
     IO.setenc(y, 1, 0) 'options on, off
 12210:
     t = IO.getenc()
-    if t = y then goto 12220
+    if t = y goto 12220
     y = t
     z = 0
 12220:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12250
+    if k = 0 goto 12250
     gosub 9100        ' BEEP key pressed
     goto  12270
 12250:
-    LED.irange(0, 0, 79) ' black out LEDs
-    if z & 15 > 10 then goto 12260 ' light LEDs 10 in 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12260 ' light LEDs 10 in 15 cycles
     LED.iled(2, 50 + read 10, y)
 12260:
     LED.iled(6, read 10, 5) ' System menu option 5
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12210 ' timeout
+    if z <= 300 goto 12210 ' timeout
     goto 10105 ' return to system menu without save
 12270:
     if y <> (IO.eeread(13)) then IO.eewrite(13, y) ' Write slot machine value
@@ -947,17 +1061,17 @@
     IO.setenc(y, 1, 0) ' two options
 12410:
     t = IO.getenc()
-    if t = y then goto 12420
+    if t = y goto 12420
     y = t
     z = 0 ' reset counter
 12420:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12450
+    if k = 0 goto 12450
     gosub 9100        ' BEEP key pressed
     goto  12470
 12450:
-    LED.irange(0, 0, 79) ' blank LEDs
-    if z & 15 > 10 then goto 12460
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12460
     t = y + 1 '1 if 12 hour, 2 if 24 hour
     LED.iled(2, 40 + read 10, t) ' 1 or 2
     LED.iled(2, 50 + read 10, 2 * t) ' 2 or 4
@@ -965,7 +1079,7 @@
     LED.iled(3, read 10, 1) ' Settings menu, option 1
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12410 ' time out
+    if z <= 300 goto 12410 ' time out
     goto 10005 ' return to system menu without save
 12470:
     if y <> (IO.eeread(14)) then IO.eewrite(14, y) ' Write 12 hour clock Value
@@ -981,23 +1095,23 @@
     IO.setenc(y, 1, 0) ' two options
 12510:
     t = IO.getenc()
-    if t = y then goto 12520
+    if t = y goto 12520
     y = t
     z = 0 ' reset counter
 12520:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12550 ' no key
+    if k = 0 goto 12550 ' no key
     gosub 9100        ' BEEP, key
     goto  12570
 12550:
-    LED.irange(0, 0, 79) ' blank LEDs
-    if z & 15 > 10 then goto 12560 ' light pixel 10 out of 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12560 ' light pixel 10 out of 15 cycles
     LED.iled(2, 50 + read 10, y)
 12560:
     LED.iled(6, read 10, 6) ' 6th option in blue System menu
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12510
+    if z <= 300 goto 12510
     goto 10105 ' return to system menu without save
 12570:
     if y <> (IO.eeread(15)) then IO.eewrite(15, y) ' Write Seconds flip Value
@@ -1013,23 +1127,23 @@
     IO.setenc(y, 2, 0) ' three options
 12610:
     t = IO.getenc()
-    if t = y then goto 12620
+    if t = y goto 12620
     y = t
     z = 0 ' reset counter
 12620:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 12650 ' no key
+    if k = 0 goto 12650 ' no key
     gosub 9100        ' BEEP, key
     goto  12670
 12650:
-    LED.irange(0, 0, 79) ' blank LEDs
-    if z & 15 > 10 then goto 12660 ' light pixel 10 out of 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 12660 ' light pixel 10 out of 15 cycles
     LED.iled(2, 50 + read 10, y)
 12660:
     LED.iled(3, read 10, 3) ' 3rd option in red Settings menu
     LED.show()
     z = z + 1
-    if z <= 300 then goto 12610 ' time out
+    if z <= 300 goto 12610 ' time out
     goto 10005 ' return to system menu without save
 12670:
     if y <> (IO.eeread(16)) then IO.eewrite(16, y) ' Write date format Value
@@ -1047,16 +1161,16 @@
     IO.setenc(y, 23, 0) ' 0-23 wraparound
 13010:
     t = IO.getenc()
-    if t = y then goto 13020
+    if t = y goto 13020
     y = t
     z = 0 ' reset counter
 13020:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 13100 ' short press > minutes
-    if k = 2 then goto 13300 ' long press > save, exit
+    if k = 1 goto 13100 ' short press > minutes
+    if k = 2 goto 13300 ' long press > save, exit
 13050: ' no key pressed
-    LED.irange(0, 0, 79) ' blank out LEDs
-    if z & 15 > 10 then goto 13060 ' only light 1st 2 pixels 10 / 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 13060 ' only light 1st 2 pixels 10 / 15 cycles
     LED.iled(2,      read 10, y / 10) ' hours 10s, white
     LED.iled(2, 10 + read 10, y % 10) ' hours units, white
 13060:
@@ -1066,7 +1180,7 @@
     LED.iled(5, 70 + read 10, (w * 5) % 10) ' seconds units, yellow
     LED.show()
     z = z + 1
-    if z <= 500 then goto 13010    ' time out
+    if z <= 500 goto 13010    ' time out
     goto 13320
 '................................................
 13100: ' minutes
@@ -1075,16 +1189,16 @@
     IO.setenc(x, 59, 0) ' 0 - 59 wraparound
 13110:
     t = IO.getenc()
-    if t = x then goto 13120
+    if t = x goto 13120
     x = t
     z = 0 ' reset counter
 13120:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 13200 ' short press > seconds
-    if k = 2 then goto 13300 ' long press > save, exit
+    if k = 1 goto 13200 ' short press > seconds
+    if k = 2 goto 13300 ' long press > save, exit
 13150:
-    LED.irange(0, 0, 79) ' blank out
-    if z & 15 > 10 then goto 13160 ' only show minutes 10 / 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 13160 ' only show minutes 10 / 15 cycles
     LED.iled(2, 30 + read 10, x / 10) ' minutes, 10s, white
     LED.iled(2, 40 + read 10, x % 10) ' minutes, units, white
 13160:
@@ -1094,7 +1208,7 @@
     LED.iled(5, 70 + read 10, (w * 5) % 10) 'seconds, units, yellow, constant
     LED.show()
     z = z + 1
-    if z <= 500 then goto 13110    ' timeout
+    if z <= 500 goto 13110    ' timeout
     goto 13320
 '................................................
 13200: ' seconds
@@ -1103,16 +1217,16 @@
     IO.setenc(w, 11, 0) ' 0 - 55 in 5 second increments, wraparound
 13210:
     t = IO.getenc()
-    if t = w then goto 13220
+    if t = w goto 13220
     w = t
     z = 0
 13220:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 13005 ' short click > hours
-    if k = 2 then goto 13300 ' long click > save, exit
+    if k = 1 goto 13005 ' short click > hours
+    if k = 2 goto 13300 ' long click > save, exit
 13250:
-    LED.irange(0, 0, 79) ' blank out
-    if z & 15 > 10 then goto 13260 ' only light seconds 10 / 15 cycles
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 13260 ' only light seconds 10 / 15 cycles
     LED.iled(2, 60 + read 10, (w * 5) / 10) ' seconds 10s white
     LED.iled(2, 70 + read 10, (w * 5) % 10) ' seconds units white
 13260:
@@ -1122,7 +1236,7 @@
     LED.iled(5, 40 + read 10, x % 10) ' minutes units yellow constant
     LED.show()
     z = z + 1
-    if z <= 500 then goto 13210    ' time out
+    if z <= 500 goto 13210    ' time out
     goto 13320
 '................................................
 13300: ' save, exit
@@ -1146,16 +1260,16 @@
     IO.setenc(y, 30, 0)  ' day 1-31
 14010:
     t = IO.getenc()
-    if t = y then goto 14020
+    if t = y goto 14020
     y = t
     z = 0 ' counter reset
 14020:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 14100 ' short push, go to month
-    if k = 2 then goto 14300 ' long push, save and exit
+    if k = 1 goto 14100 ' short push, go to month
+    if k = 2 goto 14300 ' long push, save and exit
 14050: ' flashing LEDs
-    LED.irange(0, 0, 79) ' blank out LEDs
-    if z & 15 > 10 then goto 14060 ' show LEDs in 10 out of every 15 cycles (flash)
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 14060 ' show LEDs in 10 out of every 15 cycles (flash)
     r = (IO.eeread(16)) * 30' day position depending on date format
     LED.iled(2, r + read 10, (y + 1) / 10) ' days 10s
     LED.iled(2, r + 10 + read 10, (y + 1) % 10) ' days units
@@ -1168,7 +1282,7 @@
     LED.iled(5, r + 10 + read 10, w % 10) ' years units
     LED.show()
     z = z + 1
-    if z <= 500 then goto 14010    ' time out
+    if z <= 500 goto 14010    ' time out
     goto 14320 ' exit
 '................................................
 14100: ' months
@@ -1177,16 +1291,16 @@
     IO.setenc(x, 11, 0) ' 12 months
 14110:
     t = IO.getenc()
-    if t = x then goto 14120
+    if t = x goto 14120
     x = t
     z = 0 ' reset timeout timer
 14120:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 14200 ' short press > years
-    if k = 2 then goto 14300
+    if k = 1 goto 14200 ' short press > years
+    if k = 2 goto 14300
 14150:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 14160
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 14160
     if (IO.eeread(16)) = 1 then r = 0 else r = 30
     LED.iled(2, r + read 10, (x + 1) / 10) ' months 10s depending on date format
     LED.iled(2, r + 10 + read 10, (x + 1) % 10) ' months units  depending on date format
@@ -1199,7 +1313,7 @@
     LED.iled(5, r + 10 + read 10, w % 10)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 14110    ' time out check
+    if z <= 500 goto 14110    ' time out check
     goto 14320 ' exit
 '................................................
 14200: ' years
@@ -1208,16 +1322,16 @@
     IO.setenc(w, 99, 0) ' 2000 - 2099
 14210:
     t = IO.getenc()
-    if t = w then goto 14220
+    if t = w goto 14220
     w = t
     z = 0 ' reset timeout counter
 14220:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 14005 ' short press = back to days
-    if k = 2 then goto 14300 ' long press = save and exit
+    if k = 1 goto 14005 ' short press = back to days
+    if k = 2 goto 14300 ' long press = save and exit
 14250:
-    LED.irange(0, 0, 79) ' blank out
-    if z & 15 > 10 then goto 14260 ' display 10 cycles out of 15 (flash)
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 14260 ' display 10 cycles out of 15 (flash)
     if (IO.eeread(16)) = 2 then r = 0 else r = 60 ' year position depending on format
     LED.iled(2, r + read 10, w / 10)
     LED.iled(2, r + 10 + read 10, w % 10)
@@ -1230,19 +1344,16 @@
     LED.iled(5, r + 10 + read 10, (x + 1) % 10)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 14210    ' time out check
+    if z <= 500 goto 14210    ' time out check
     goto 14320 ' exit
 '................................................
 14300:
     gosub 9100        ' BEEP
     r = w + 2000 ' year in 4 digits
-    if x = 1 and r % 4 = 0 and y > 28 then goto 14330 ' 30/31 days in Feb in leap year. forget year 2000!
-    if x = 1 and r % 4 <> 0 and y > 27 then goto 14330 ' 29 / 30 / 31 days Feb non-leap year
+    if x = 1 and r % 4 = 0 and y > 28 goto 14330 ' 30/31 days in Feb in leap year. forget year 2000!
+    if x = 1 and r % 4 <> 0 and y > 27 goto 14330 ' 29 / 30 / 31 days Feb non-leap year
 14305: ' months with 30 days
-    data 3, 5, 8, 10
-    for i = 0 to 3
-      if x = read 14305,i and y > 29 then goto 14330 ' 31 days in months with 30 days
-    next i
+    if x = 3 or x = 5 or x = 8 or x = 10 and y > 29 goto 14330 ' 31 days in months with 30 days
 14310: ' set date
     IO.setrtc(5, w + 2000)     ' Write Year
     IO.setrtc(4, x + 1)        ' Write Month
@@ -1250,8 +1361,8 @@
 14320: ' exit
     goto 10005
 14330: ' non-sane date
-    for r = 1 to 15 ' non-sane days in month
-    gosub 9100 ' beep 100 times
+    for r = 1 to 15 ' non-sane days in month beep 15 times
+     gosub 9100
     next r
     goto 14005 ' return to day setting
 '================================================
@@ -1265,23 +1376,23 @@
     IO.setenc(y, 1, 0)
 15010:
     t = IO.getenc()
-    if t = y then goto 15020
+    if t = y goto 15020
     y = t
     z = 0
 15020:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 15050
+    if k = 0 goto 15050
     gosub 9100        ' BEEP
     goto  15070
 15050:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 15060
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 15060
     LED.iled(2, 50 + read 10, y)
 15060:
     LED.iled(3, read 10, 5)
     LED.show()
     z = z + 1
-    if z <= 300 then goto 15010
+    if z <= 300 goto 15010
     goto 10005 ' return to system menu without save
 15070:
     if y <> (IO.eeread(5)) then IO.eewrite(5, y) ' Read alarm Value
@@ -1297,23 +1408,23 @@
     IO.setenc(y, 5, 0)  ' 5 fade values
 15110:
     t = IO.getenc()
-    if t = y then goto 15120
+    if t = y goto 15120
     y = t
     z = 0                ' movement so reset counter
 15120:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 15150
+    if k = 0 goto 15150
     gosub 9100        ' BEEP
     goto  15170       ' short press
 15150:
-    LED.irange(0, 0, 79) ' blank everything
-    if z & 15 > 10 then goto 15160 ' (flashing)
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 15160 ' (flashing)
     LED.iled(2, 50 + read 10, y) ' fade units
 15160:
     LED.iled(6, read 10, 7) ' show in System 7 i.e. fade
     LED.show()
     z = z + 1
-    if z <= 300 then goto 15110 ' timeout
+    if z <= 300 goto 15110 ' timeout
     goto 10105 ' return to system menu without save
 15170:
     if y <> (IO.eeread(17)) then IO.eewrite(17, y) ' Write fade Value
@@ -1331,16 +1442,16 @@
     IO.setenc(y, 23, 0)
 16010:
     t = IO.getenc()
-    if t = y then goto 16020
+    if t = y goto 16020
     y = t
     z = 0
 16020:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 16100
-    if k = 2 then goto 16300
+    if k = 1 goto 16100
+    if k = 2 goto 16300
 16050:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 16060
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 16060
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
 16060:
@@ -1350,7 +1461,7 @@
     LED.iled(3, 70 + read 10, 0)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 16010    ' 20 Sek.
+    if z <= 500 goto 16010    ' 20 Sek.
     goto 16320
 '................................................
 16100:
@@ -1359,16 +1470,16 @@
     IO.setenc(x, 59, 0)
 16110:
     t = IO.getenc()
-    if t = x then goto 16120
+    if t = x goto 16120
     x = t
     z = 0
 16120:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 16005
-    if k = 2 then goto 16300
+    if k = 1 goto 16005
+    if k = 2 goto 16300
 16150:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 16160
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 16160
     LED.iled(2, 30 + read 10, x / 10)
     LED.iled(2, 40 + read 10, x % 10)
 16160:
@@ -1378,7 +1489,7 @@
     LED.iled(3, 70 + read 10, 0)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 16110    ' 20 Sek.
+    if z <= 500 goto 16110    ' 20 Sek.
     goto 16320
 '................................................
 16300:
@@ -1399,23 +1510,23 @@
     IO.setenc(y, 1, 0)
 17010:
     t = IO.getenc()
-    if t = y then goto 17020
+    if t = y goto 17020
     y = t
     z = 0
 17020:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 17050
+    if k = 0 goto 17050
     gosub 9100        ' BEEP
     goto  17070
 17050:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 17060
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 17060
     LED.iled(2, 50 + read 10, y)
 17060:
     LED.iled(3, read 10, 7)
     LED.show()
     z = z + 1
-    if z <= 300 then goto 17010
+    if z <= 300 goto 17010
     goto 10005 ' return to system menu without save
 17070:
     if y <> (IO.eeread(8)) then IO.eewrite(8, y) ' Read auto Datum Value
@@ -1433,16 +1544,16 @@
     IO.setenc(y, 23, 0)
 18010:
     t = IO.getenc()
-    if t = y then goto 18020
+    if t = y goto 18020
     y = t
     z = 0
 18020:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 18100
-    if k = 2 then goto 18300
+    if k = 1 goto 18100
+    if k = 2 goto 18300
 18050:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 18060
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 18060
     LED.iled(2,      read 10, y / 10)
     LED.iled(2, 10 + read 10, y % 10)
 18060:
@@ -1452,7 +1563,7 @@
     LED.iled(4, 70 + read 10, 0)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 18010    ' 20 Seconds.
+    if z <= 500 goto 18010    ' 20 Seconds.
     goto 18320
 '................................................
 18100:
@@ -1461,16 +1572,16 @@
     IO.setenc(x, 59, 0)
 18110:
     t = IO.getenc()
-    if t = x then goto 18120
+    if t = x goto 18120
     x = t
     z = 0
 18120:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 18005
-    if k = 2 then goto 18300
+    if k = 1 goto 18005
+    if k = 2 goto 18300
 18150:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 18160
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 18160
     LED.iled(2, 30 + read 10, x / 10)
     LED.iled(2, 40 + read 10, x % 10)
 18160:
@@ -1480,7 +1591,7 @@
     LED.iled(4, 70 + read 10, 0)
     LED.show()
     z = z + 1
-    if z <= 500 then goto 18110    ' 20 Sek.
+    if z <= 500 goto 18110    ' 20 Sek.
     goto 18320
 '................................................
 ' Timer go
@@ -1491,14 +1602,14 @@
     t = s
 18205:
     gosub 9000        ' GETKEY
-    if k = 1 then gosub 9100 ' BEEP
-    if k = 1 then goto 18315 ' start /stop
+    if k = 1 gosub 9100 ' BEEP
+    if k = 1 goto 18315 ' start /stop
     a = IO.eeread(5)
     if a = 1 gosub 18500
     if a = 2 goto 99     ' alarm prio
     s = IO.getrtc(0)
-    if s = t then goto 18205
-    LED.irange(0, 0, 79)
+    if s = t goto 18205
+    LED.iall(0) ' Clear display
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
     LED.iled(4, 30 + read 10, x / 10)
@@ -1506,10 +1617,10 @@
     LED.iled(4, 60 + read 10, w / 10)
     LED.iled(4, 70 + read 10, w % 10)
     LED.show()
-    if w + x + y = 0 then goto 18230 ' timer end music
+    if w + x + y = 0 goto 18230 ' timer end music
     w = w - 1
-    if w < 0 then gosub 18210
-    if x < 0 then gosub 18220
+    if w < 0 gosub 18210
+    if x < 0 gosub 18220
     goto 18201
 18210:
     w = 59
@@ -1522,13 +1633,13 @@
 18230:
     n = 0
 18240:
-    LED.irange(0, 0, 79)
+    LED.iall(0) ' Clear display
     LED.show()
 18241:
     t = read 40, n
     d = read 40, n + 1
     n = n + 2
-    if t = 0 then goto 99 ' timer end
+    if t = 0 goto 99 ' timer end
     LED.iled(4,      read 10, 0)
     LED.iled(4, 10 + read 10, 0)
     LED.iled(4, 30 + read 10, 0)
@@ -1539,7 +1650,7 @@
     IO.beep(t)
     delay d
     IO.beep(0)
-    LED.irange(0, 0, 79)
+    LED.iall(0) ' Clear display
     LED.show()
     delay 100
     goto 18241
@@ -1554,14 +1665,14 @@
     LED.iled(4, 40 + read 10, x % 10)
     LED.show()
 18315:
-    if x + y + w = 0 then goto 10005 ' no timer
+    if x + y + w = 0 goto 10005 ' no timer
     a = IO.eeread(5)
     if a = 1 gosub 18500
     if a = 2 goto 99  ' alarm prio
     gosub 9000        ' GETKEY
-    if k = 0 then goto 18315
-    if k = 1 then goto 18200
-    if k = 2 then goto 18320
+    if k = 0 goto 18315
+    if k = 1 goto 18200
+    if k = 2 goto 18320
 18320:
     gosub 9100        ' BEEP
     goto 10005
@@ -1577,7 +1688,7 @@
     y = 0  ' Stopwatch Hour = 0
     x = 0  ' Stopwatch Minute = 0
     w = 0  ' Stopwatch Second = 0
-    LED.irange(0, 0, 79)
+    LED.iall(0) ' Clear display
     LED.iled(4,      read 10, y / 10) ' hours 10s
     LED.iled(4, 10 + read 10, y % 10) ' hours 1s
     LED.iled(4, 20 + read 10, x / 10) ' minutes 10s
@@ -1596,13 +1707,13 @@
     t = s
 19205:
     gosub 9000        ' GETKEY
-    if k = 1 then goto 19300 ' start /stop
+    if k = 1 goto 19300 ' start /stop
     a = IO.eeread(5)
     if a = 1 gosub 18500
     if a = 2 goto 99 ' alarm prio
     s = IO.getrtc(0)
-    if s = t then goto 19205
-    LED.irange(0, 0, 79)
+    if s = t goto 19205
+    LED.iall(0) ' Clear display
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
     LED.iled(4, 20 + read 10, x / 10)
@@ -1611,9 +1722,9 @@
     LED.iled(4, 50 + read 10, w % 10)
     LED.show()
     w = w + 1
-    if w > 59 then gosub 19210
-    if x > 59 then gosub 19220
-    if w + x + y = 141 then goto 19230 ' Stopwatch exceeded max (23:59:59)
+    if w > 59 gosub 19210
+    if x > 59 gosub 19220
+    if w + x + y = 141 goto 19230 ' Stopwatch exceeded max (23:59:59)
     goto 19200
 19210:
     w = 0
@@ -1629,7 +1740,7 @@
     t = read 40, n
     d = read 40, n + 1
     n = n + 2
-    if t = 0 then goto 99 ' Stopwatch exceeded max so exit
+    if t = 0 goto 99 ' Stopwatch exceeded max so exit
     IO.beep(t)
     delay d
     IO.beep(0)
@@ -1643,9 +1754,9 @@
     if a = 1 gosub 18500
     if a = 2 goto 99  ' alarm prio
     gosub 9000        ' GETKEY
-    if k = 0 then goto 19315
-    if k = 1 then goto 19195
-    if k = 2 then goto 19320 ' long press
+    if k = 0 goto 19315
+    if k = 1 goto 19195
+    if k = 2 goto 19320 ' long press
 19320: ' long press
     gosub 9100        ' BEEP
     goto 10005
@@ -1660,29 +1771,192 @@
     IO.setenc(y, 1, 0)
 20010:
     t = IO.getenc()
-    if t = y then goto 20020
+    if t = y goto 20020
     y = t
     z = 0
 20020:
     gosub 9000        ' GETKEY
-    if k = 0 then goto 20050
+    if k = 0 goto 20050
     gosub 9100        ' BEEP
     goto  20070
 20050:
-    LED.irange(0, 0, 79)
-    if z & 15 > 10 then goto 20060
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 20060
     LED.iled(2, 50 + read 10, y)
 20060:
     LED.iled(6, read 10, 4)
     LED.show()
     z = z + 1
-    if z <= 300 then goto 20010
+    if z <= 300 goto 20010
     goto 10105 ' return to system menu without save
 20070:
     if y <> (IO.eeread(9)) then IO.eewrite(9, y) ' Read Partymode Value
     goto 10105
 '================================================
+' night mode duration set
+' BEGIN
+21000:
+    y = IO.eeread(19)  ' Read Begin Nightmode Hour
+    x = IO.eeread(20)  ' Read Begin Nightmode Minute
+    w = 0              ' Second = 0
+21005: ' hours
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(y, 23, 0) ' 0-23 wraparound
+21010:
+    t = IO.getenc()
+    if t = y goto 21020
+    y = t
+    z = 0 ' reset counter
+21020:
+    gosub 9000        ' GETKEY
+    if k = 1 goto 21100 ' short press > minutes
+    if k = 2 goto 21300 ' long press > save
+21050: ' no key pressed
+    LED.iall(0) ' blank out LEDs
+    if z & 15 > 10 goto 21060 ' only light cycles
+    LED.iled(2,      read 10, y / 10) ' hours 10s, white
+    LED.iled(2, 10 + read 10, y % 10) ' hours units, white
+21060:
+    LED.iled(5, 20 + read 10, x / 10) ' minutes 10s, yellow
+    LED.iled(5, 30 + read 10, x % 10) ' minutes units, yellow
+    LED.iled(5, 40 + read 10, w / 10) ' seconds 10s, yellow
+    LED.iled(5, 50 + read 10, w % 10) ' seconds units, yellow
+    LED.show()
+    z = z + 1
+    if z <= 500 goto 21010    ' time out
+    goto 10105 ' return to system menu
+'................................................
+21100: ' minutes
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(x, 59, 0) ' 0 - 59 wraparound
+21110:
+    t = IO.getenc()
+    if t = x goto 21120
+    x = t
+    z = 0 ' reset counter
+21120:
+    gosub 9000        ' GETKEY
+    if k = 1 goto 21005 ' short click > hours
+    if k = 2 goto 21300 ' long press > save
+21150:
+    LED.iall(0) ' blank out
+    if z & 15 > 10 goto 21160 ' only show cycles
+    LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
+21160:
+    LED.iled(5,      read 10, y / 10) ' hours, 10s, yellow, constant
+    LED.iled(5, 10 + read 10, y % 10) ' hours, units, yellow, constant
+    LED.iled(5, 40 + read 10, w / 10) ' seconds 10s, yellow
+    LED.iled(5, 50 + read 10, w % 10) ' seconds units, yellow
+    LED.show()
+    z = z + 1
+    if z <= 500 goto 21110    ' timeout
+    goto 10105 ' return to system menu
+'................................................
+21300: ' save Begin Nightmode
+    IO.eewrite(19, y) ' Begin Nightmode Hour
+    IO.eewrite(20, x) ' Begin Nightmode Minute
+'................................................
+' night mode duration set
+' END
+22000:
+    y = IO.eeread(21)  ' Read end Nightmode Hour
+    x = IO.eeread(22)  ' Read end Nightmode Minute
+22005: ' hours
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(y, 23, 0) ' 0-23 wraparound
+22010:
+    t = IO.getenc()
+    if t = y goto 22020
+    y = t
+    z = 0 ' reset counter
+22020:
+    gosub 9000        ' GETKEY
+    if k = 1 goto 22100 ' short press > minutes
+    if k = 2 goto 22300 ' long press > save
+22050: ' no key pressed
+    LED.iall(0) ' blank out LEDs
+    if z & 15 > 10 goto 22060 ' only light cycles
+    LED.iled(2,      read 10, y / 10) ' hours 10s, white
+    LED.iled(2, 10 + read 10, y % 10) ' hours units, white
+22060:
+    LED.iled(4, 20 + read 10, x / 10) ' minutes 10s, green
+    LED.iled(4, 30 + read 10, x % 10) ' minutes units, green
+    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s, green
+    LED.iled(4, 50 + read 10, w % 10) ' seconds units, green
+    LED.show()
+    z = z + 1
+    if z <= 500 goto 22010    ' time out
+    goto 10105 ' return to system menu
+'................................................
+22100: ' minutes
+    gosub 9100        ' BEEP
+    z = 0
+    IO.setenc(x, 59, 0) ' 0 - 59 wraparound
+22110:
+    t = IO.getenc()
+    if t = x goto 22120
+    x = t
+    z = 0 ' reset counter
+22120:
+    gosub 9000        ' GETKEY
+    if k = 1 goto 22005 ' short click > hours
+    if k = 2 goto 22300 ' long press > save
+22150:
+    LED.iall(0) ' blank out
+    if z & 15 > 10 goto 22160 ' only show cycles
+    LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
+22160:
+    LED.iled(4,      read 10, y / 10) ' hours, 10s, green, constant
+    LED.iled(4, 10 + read 10, y % 10) ' hours, units, green, constant
+    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s, green
+    LED.iled(4, 50 + read 10, w % 10) ' seconds units, green
+    LED.show()
+    z = z + 1
+    if z <= 500 goto 22110    ' timeout
+    goto 10105 ' return to system menu
+'................................................
+22300: ' save Begin Nightmode
+    gosub 9100        ' BEEP
+    IO.eewrite(21, y) ' end Nightmode Hour
+    IO.eewrite(22, x) ' end Nightmode Minute
+    goto 10105 ' return to system menu
+'================================================
+' S9: NIGHTMODE BRIGHTNESS SELECTION
+' VAR: y,t,z,k
+23000:
+    gosub 9100          ' BEEP
+    y = IO.eeread(25)    ' Read NIGHTMODE Brightness Value from EEPROM
+23005:
+    z = 0               ' counter
+    IO.setenc(y, 15, 0) ' 15 NIGHTMODE brightness values
+23010:
+    t = IO.getenc()
+    if t = y goto 23020
+    y = t
+    z = 0                ' movement so reset counter
+23020:
+    gosub 9000        ' GETKEY
+    if k = 0 goto 23050
+    gosub 9100        ' BEEP
+    goto  23070       ' short press
+23050:
+    LED.iall(0) ' Clear display
+    if z & 15 > 10 goto 23060 ' (flashing)
+    LED.iled(2, 40 + read 10, y / 10) ' NIGHTMODE brightness display 10s
+    LED.iled(2, 50 + read 10, y % 10) ' NIGHTMODE brightness units
+23060:
+    LED.iled(6, read 10, 9) ' show in System 9 NIGHTMODE brightness
+    LED.show()
+    z = z + 1
+    if z <= 300 goto 23010 ' timeout
+    goto 10105 ' return to system menu without save
+23070:
+    if y <> (IO.eeread(25)) then IO.eewrite(25, y) ' Write NIGHTMODE Brightness Value
+    goto 10105 ' return to system menu
+'================================================
 end
-
-
-
