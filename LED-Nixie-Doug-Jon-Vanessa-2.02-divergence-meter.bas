@@ -270,20 +270,20 @@
     if m = 1 goto 185 ' change date to divergence display
     if m = 2 then goto 182 ' change divergence to time display
 180: ' change from time to date display
-    if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current time colour to EEPROM
-    if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode time colour to EEPROM
+    if (IO.eeread(18)) = 0 and m < 2 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current time colour to EEPROM
+    if (IO.eeread(18)) = 1 and m < 2 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode time colour to EEPROM
     m = 1               ' change to date mode
     if k = 1 then x = 1 ' silence alarm when spinner pressed
     goto 190            ' done
 185: ' change from date to divergence display
-    if (IO.eeread(18)) = 0 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
-    if (IO.eeread(18)) = 1 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
+    if (IO.eeread(18)) = 0 and m < 2 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
+    if (IO.eeread(18)) = 1 and m < 2 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
     m = 2               ' mode change to divergence
 182: ' change from divergence to time display
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
-    if (IO.eeread(18)) = 0 then c = IO.eeread(m + 1) ' sets colour from eeprom if nightmode off
-    if (IO.eeread(18)) = 1 then c = IO.eeread(m + 23) ' sets colour from eeprom if nightmode on
+    if (IO.eeread(18)) = 0 and m < 2 then c = IO.eeread(m + 1) ' sets colour from eeprom if nightmode off
+    if (IO.eeread(18)) = 1 and m < 2 then c = IO.eeread(m + 23) ' sets colour from eeprom if nightmode on
     if m = 2 then c = 0     ' color orange for divergence
     IO.setenc(c, 14, 0)  ' set spinner to 15 colour options + wraparound
     z = 0 ' reset counter
@@ -457,37 +457,6 @@
     z = z + 1
     return
 '================================================
-' TEST FOR DIVERGENCE CHANGE
-' VAR: r: previous birthdate id
-810:
-    r = IO.eeread(26)
-    gosub 8020
-    if r <> (IO.eeread(26)) then gosub 820 else gosub 830 ' TODO REMOVE ELSE 'if birthdate id changed
-    return
-820:
-    print "Birthdate id changed"
-    ' TODO if birthdate change -> check prediction is correct
-    gosub 830
-    m = 2 ' switch to divergence mode
-    z = 0 ' reset counter to trigger divergence animation
-    return
-'================================================
-' CHECK IF PREDICTION IS CORRECT
-' (update divergence) VAR: eeread(26): Birthday id (either 1, 4, 7 or 10)
-830:
-    print "Evaluating divergence prediction"
-    print "predicted triple 1: ",(IO.eeread(27))
-    print "predcited triple 2: ",(IO.eeread(28))
-    g = read 50, ((IO.eeread(26))-1) ' current birthdate year
-    q = ((((IO.getrtc(5)) - g)/10)*g) + ((((IO.getrtc(5)) - g)%10)*g/10) 'first triple: (5*1966 + 3*1966/10)/100
-    q = q / 100
-    g = ((((((IO.getrtc(5)) - g)/10)*g)%100)*10 + (((IO.getrtc(5)) - g)%10)*g) 'scnd triple: (5*1966%100*10 + 2*1966)%1000
-    g = g % 1000
-    print "real triple 1: ",q
-    print "real triple 2: ",g
-    ' TODO if both triples are same like eeprom then switch flag
-    return
-'================================================
 ' SHOW Alarm
 ' VAR: n, p, s, i
 700:
@@ -572,6 +541,37 @@
     if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
     if z >= 3000 then z = 0
     z = z + 1
+    return
+'================================================
+' TEST FOR DIVERGENCE CHANGE
+' VAR: r: previous birthdate id
+810:
+    r = IO.eeread(26)
+    gosub 8020
+    if r <> (IO.eeread(26)) then gosub 820 else gosub 830 ' TODO REMOVE ELSE 'if birthdate id changed
+    return
+820:
+    print "Birthdate id changed"
+    ' TODO if birthdate change -> check prediction is correct
+    gosub 830
+    m = 2 ' switch to divergence mode
+    z = 0 ' reset counter to trigger divergence animation
+    return
+'================================================
+' CHECK IF PREDICTION IS CORRECT
+' (update divergence) VAR: eeread(26): Birthday id (either 1, 4, 7 or 10)
+830:
+    print "Evaluating divergence prediction"
+    print "predicted triple 1: ",(IO.eeread(27))
+    print "predcited triple 2: ",(IO.eeread(28))
+    g = read 50, ((IO.eeread(26))-1) ' current birthdate year
+    q = ((((IO.getrtc(5)) - g)/10)*g) + ((((IO.getrtc(5)) - g)%10)*g/10) 'first triple: (5*1966 + 3*1966/10)/100
+    q = q / 100
+    g = ((((((IO.getrtc(5)) - g)/10)*g)%100)*10 + (((IO.getrtc(5)) - g)%10)*g) 'scnd triple: (5*1966%100*10 + 2*1966)%1000
+    g = g % 1000
+    print "real triple 1: ",q
+    print "real triple 2: ",g
+    ' TODO if both triples are same like eeprom then switch flag
     return
 '================================================
 ' Character display routine for date / time (using set colour mode)
@@ -844,7 +844,7 @@
     IO.eewrite(26, 0)            ' 26 = Birthdate month id (0)
     IO.eewrite(27, 0)            ' 27 = worldline prediction triple 1 (0)
     IO.eewrite(28, 0)            ' 28 = worldline prediction triple 2 (0)
-    gosub 8010                   ' 28 = Calculate current birthdate
+    gosub 8010                   ' 26 = Calculate current birthdate
     print "EEPROM reset."
     print " "
     IO.beep(35)
