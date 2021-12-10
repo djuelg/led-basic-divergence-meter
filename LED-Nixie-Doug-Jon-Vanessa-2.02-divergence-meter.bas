@@ -6,7 +6,7 @@
 ' *  partially from Doug's ver.D1.02  *
 ' *  partially from Jon's ver.J2.02   *
 ' *************************************
-' *  Ver. C2.10.05 CJÂ´s edits:        *
+' *  Ver. C2.10.05 CJ´s edits:        *
 ' *  Changed default beep             *
 ' *  Added beep at startup            *
 ' *  Added dedicated alarm sound      *
@@ -24,9 +24,9 @@
 ' Usage:
 '
 ' Three Button Modes:
-' â€“ Short press.
-' â€“ Long press: hold the button until youâ€™ll hear a beep, then release it.
-' â€“ Extra long press: hold the button until youâ€™ll hear a beep, keep holding it you hear a second beep*:
+' – Short press.
+' – Long press: hold the button until you’ll hear a beep, then release it.
+' – Extra long press: hold the button until you’ll hear a beep, keep holding it you hear a second beep*:
 '   The clock toggles manually between night/day mode.
 '   * low beep = nightmode off; high beep = nightmode on
 '
@@ -299,11 +299,16 @@
     if (IO.eeread(18)) = 1 and (IO.eeread(25)) <> 0 then v = read 30, IO.eeread(25) ' Set nighmode brightness from EEPROM
 210:
     LED.iall(0) ' Clear display
+    if (IO.eeread(18)) = 1 and a >= 1 and a <= 7 then goto 215 ' turn off the lights at night
     if m = 1 goto 220 ' If date mode, display date
     if m = 2 goto 230 ' If divergence mode, display divergence
     gosub 500      ' Show time - set LEDs
     LED.show()     ' Show time - show LEDs
     goto 100       ' Back to beginning of loop
+215:
+    LED.show()
+    delay 1000
+    goto 100
 220:
     if m <> 1 goto 100 ' If not date mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
