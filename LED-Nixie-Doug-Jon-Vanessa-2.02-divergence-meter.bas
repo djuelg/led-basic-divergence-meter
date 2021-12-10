@@ -132,7 +132,7 @@
 ' displayed on the screen at program start for debugging purposes.
 '
 '******************************************************************************
-### L80 CGRB P1 S2 M92 F40
+### L80 CGRB P0 S2 M92 F40
 ' Set initial EEPROM state (for testing, uncomment to set on run)
 '    IO.eewrite(0, 215)           ' 0 = Softwareversion
 '    IO.eewrite(1, 11)            ' 1 = Time Colour           (11)
@@ -256,10 +256,11 @@
     if m = 0 and r = 50 and (IO.eeread(8)) = 1 goto 180 ' date auto display
     if s % 10 = 2 or s % 10 = 6 and (IO.eeread(5)) = 1 and (IO.eeread(18)) = 0 and r = 2 gosub 700 ' show alarm time
     gosub 9000        ' Get key. 0 = none 1 = short press 2 = long press 3 = extra long press
+    print "Keytype and mode are:", k, ", ", m
     if k = 1 goto 110 ' short press: change display mode
-    if k = 3 and (IO.eeread(18)) = 1 goto 310 ' extra long press: nightmode manual off
-    if k = 3 and (IO.eeread(18)) = 0 goto 315 ' extra long press: nightmode manual on
-    if k = 2 and m = 2 goto 43000 ' worldline prediction
+    if k = 3 and m < 2 and (IO.eeread(18)) = 1 goto 310 ' extra long press: nightmode manual off
+    if k = 3 and m < 2 and (IO.eeread(18)) = 0 goto 315 ' extra long press: nightmode manual on
+    if k > 1 and m = 2 goto 43000 ' worldline prediction
     if k = 2 and m = 1 goto 10100 ' system menu
     if k = 2 goto 10000 ' settings menu
     goto 200 ' k = 0
@@ -268,7 +269,7 @@
     gosub 9100        ' BEEP
     if m = 0 goto 180 ' change time to date display
     if m = 1 goto 185 ' change date to divergence display
-    if m = 2 then goto 182 ' change divergence to time display
+    if m = 2 goto 182 ' change divergence to time display
 180: ' change from time to date display
     if (IO.eeread(18)) = 0 and m < 2 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current time colour to EEPROM
     if (IO.eeread(18)) = 1 and m < 2 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode time colour to EEPROM
@@ -279,6 +280,7 @@
     if (IO.eeread(18)) = 0 and m < 2 and (IO.eeread(m + 1)) <> c then IO.eewrite(m + 1, c) ' saves current date colour to EEPROM
     if (IO.eeread(18)) = 1 and m < 2 and (IO.eeread(m + 23)) <> c then IO.eewrite(m + 23, c) ' saves current nightmode date colour to EEPROM
     m = 2               ' mode change to divergence
+    goto 190            ' done
 182: ' change from divergence to time display
     m = 0               ' mode change to time
 190: 'NB: also entry point from start
@@ -313,7 +315,6 @@
     if z = 0 gosub 240 ' If first time called initialize
     gosub 800      ' SHOW DIVERGENCE - set LEDs
     LED.show()     ' Show divergence - show LEDs
-    if z > 120 goto 185  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 240:
     gosub 8020    ' update divergence
@@ -874,8 +875,8 @@
         g = read 50, i
         q = read 50, (i+1)
         if g = (IO.getrtc(4)) and q <= (IO.getrtc(3)) and i <> (IO.eeread(26)) then IO.eewrite(26, i) ' true if the actual month is a birthday-month and on/after birthday
-        print "New Birthdate id is ",(IO.eeread(26))
     next i
+    print "New Birthdate id is ",(IO.eeread(26))
     return
 '================================================
 ' Print out EEPROM to Terminal
@@ -1419,7 +1420,7 @@
     IO.setrtc(1, x)        ' Write Minutes
     IO.setrtc(2, y)        ' Write Hours
 13320:
-    gosub 8010
+    gosub 8010 ' time changed -> recalculate divergence
     gosub 810  ' check for divergence change
     goto 10005 ' return to settings menu
 '================================================
@@ -1534,7 +1535,7 @@
     IO.setrtc(4, x + 1)        ' Write Month
     IO.setrtc(3, y + 1)        ' Write Day
 14320: ' exit
-    gosub 8010
+    gosub 8010 ' date changed -> recalculate divergence
     gosub 810  ' check for divergence change
     goto 10005
 14330: ' non-sane date
@@ -1995,10 +1996,10 @@
     LED.iled(2,      read 10, y / 10) ' hours 10s, white
     LED.iled(2, 10 + read 10, y % 10) ' hours units, white
 21060:
-    LED.iled(5, 20 + read 10, x / 10) ' minutes 10s, yellow
-    LED.iled(5, 30 + read 10, x % 10) ' minutes units, yellow
-    LED.iled(5, 40 + read 10, w / 10) ' seconds 10s, yellow
-    LED.iled(5, 50 + read 10, w % 10) ' seconds units, yellow
+    LED.iled(5, 30 + read 10, x / 10) ' minutes 10s, yellow
+    LED.iled(5, 40 + read 10, x % 10) ' minutes units, yellow
+    LED.iled(5, 60 + read 10, w / 10) ' seconds 10s, yellow
+    LED.iled(5, 70 + read 10, w % 10) ' seconds units, yellow
     LED.show()
     z = z + 1
     if z <= 500 goto 21010    ' time out
@@ -2020,13 +2021,13 @@
 21150:
     LED.iall(0) ' blank out
     if z & 15 > 10 goto 21160 ' only show cycles
-    LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
-    LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
+    LED.iled(2, 30 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 40 + read 10, x % 10) ' minutes, units, white
 21160:
     LED.iled(5,      read 10, y / 10) ' hours, 10s, yellow, constant
     LED.iled(5, 10 + read 10, y % 10) ' hours, units, yellow, constant
-    LED.iled(5, 40 + read 10, w / 10) ' seconds 10s, yellow
-    LED.iled(5, 50 + read 10, w % 10) ' seconds units, yellow
+    LED.iled(5, 60 + read 10, w / 10) ' seconds 10s, yellow
+    LED.iled(5, 70 + read 10, w % 10) ' seconds units, yellow
     LED.show()
     z = z + 1
     if z <= 500 goto 21110    ' timeout
@@ -2060,10 +2061,10 @@
     LED.iled(2,      read 10, y / 10) ' hours 10s, white
     LED.iled(2, 10 + read 10, y % 10) ' hours units, white
 22060:
-    LED.iled(4, 20 + read 10, x / 10) ' minutes 10s, green
-    LED.iled(4, 30 + read 10, x % 10) ' minutes units, green
-    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s, green
-    LED.iled(4, 50 + read 10, w % 10) ' seconds units, green
+    LED.iled(4, 30 + read 10, x / 10) ' minutes 10s, green
+    LED.iled(4, 40 + read 10, x % 10) ' minutes units, green
+    LED.iled(4, 60 + read 10, w / 10) ' seconds 10s, green
+    LED.iled(4, 70 + read 10, w % 10) ' seconds units, green
     LED.show()
     z = z + 1
     if z <= 500 goto 22010    ' time out
@@ -2085,13 +2086,13 @@
 22150:
     LED.iall(0) ' blank out
     if z & 15 > 10 goto 22160 ' only show cycles
-    LED.iled(2, 20 + read 10, x / 10) ' minutes, 10s, white
-    LED.iled(2, 30 + read 10, x % 10) ' minutes, units, white
+    LED.iled(2, 30 + read 10, x / 10) ' minutes, 10s, white
+    LED.iled(2, 40 + read 10, x % 10) ' minutes, units, white
 22160:
     LED.iled(4,      read 10, y / 10) ' hours, 10s, green, constant
     LED.iled(4, 10 + read 10, y % 10) ' hours, units, green, constant
-    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s, green
-    LED.iled(4, 50 + read 10, w % 10) ' seconds units, green
+    LED.iled(4, 60 + read 10, w / 10) ' seconds 10s, green
+    LED.iled(4, 70 + read 10, w % 10) ' seconds units, green
     LED.show()
     z = z + 1
     if z <= 500 goto 22110    ' timeout
@@ -2124,8 +2125,8 @@
 23050:
     LED.iall(0) ' Clear display
     if z & 15 > 10 goto 23060 ' (flashing)
-    LED.iled(2, 40 + read 10, y / 10) ' NIGHTMODE brightness display 10s
-    LED.iled(2, 50 + read 10, y % 10) ' NIGHTMODE brightness units
+    LED.iled(2, 60 + read 10, y / 10) ' NIGHTMODE brightness display 10s
+    LED.iled(2, 70 + read 10, y % 10) ' NIGHTMODE brightness units
 23060:
     LED.iled(6, read 10, 9) ' show in System 9 NIGHTMODE brightness
     LED.show()
@@ -2139,6 +2140,7 @@
 ' DIVERGENCE SET
 ' VAR: w: position, x: triple 2, y: triple 1, t: getenc, z: counter, k: button press
 43000:
+    print "Ready for user input of worldline"
     w = -1
     y = IO.eeread(27) ' triple 1
     x = IO.eeread(28) ' triple 2
@@ -2168,6 +2170,7 @@
     gosub 9000        ' GETKEY
     if k = 1 then goto 43005 ' short press > next digit
     if k = 2 then goto 43300 ' long press > save, exit
+    print "Div-loop Key", k
 43050: ' no key pressed
     LED.iall(0) ' Clear display
     if z & 15 > 10 then goto 43060 ' only light 1st 2 pixels 10 / 15 cycles
@@ -2192,6 +2195,6 @@
     IO.eewrite(28, x)
     delay 500
 43320:
-    goto 100 ' return to main loop
+    goto 190 ' return to main loop
 '================================================
 end
