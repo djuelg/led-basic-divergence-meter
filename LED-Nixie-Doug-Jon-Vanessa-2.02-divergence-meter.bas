@@ -313,7 +313,7 @@
     if m <> 1 goto 100 ' If not date mode, re-enter loop
     gosub 600      ' SHOW DATE - set LEDs
     LED.show()     ' Show date - show LEDs
-    if z > 120 goto 185  ' Return to TIME display after ca. 3sec
+    if z > 120 goto 182  ' Return to TIME display after ca. 3sec
     goto 100 ' Back to beginning of loop
 230:
     if m <> 2 goto 100 ' If not divergence mode, re-enter loop
@@ -1874,10 +1874,10 @@
     LED.iall(0) ' Clear display
     LED.iled(4,      read 10, y / 10) ' hours 10s
     LED.iled(4, 10 + read 10, y % 10) ' hours 1s
-    LED.iled(4, 20 + read 10, x / 10) ' minutes 10s
-    LED.iled(4, 30 + read 10, x % 10) ' minutes 1s
-    LED.iled(4, 40 + read 10, w / 10) ' seconds 10s
-    LED.iled(4, 50 + read 10, w % 10) ' seconds 1s
+    LED.iled(4, 30 + read 10, x / 10) ' minutes 10s
+    LED.iled(4, 40 + read 10, x % 10) ' minutes 1s
+    LED.iled(4, 60 + read 10, w / 10) ' seconds 10s
+    LED.iled(4, 70 + read 10, w % 10) ' seconds 1s
     LED.show()
     w = w + 1
     goto 19300
@@ -1899,10 +1899,10 @@
     LED.iall(0) ' Clear display
     LED.iled(4,      read 10, y / 10)
     LED.iled(4, 10 + read 10, y % 10)
-    LED.iled(4, 20 + read 10, x / 10)
-    LED.iled(4, 30 + read 10, x % 10)
-    LED.iled(4, 40 + read 10, w / 10)
-    LED.iled(4, 50 + read 10, w % 10)
+    LED.iled(4, 30 + read 10, x / 10)
+    LED.iled(4, 40 + read 10, x % 10)
+    LED.iled(4, 60 + read 10, w / 10)
+    LED.iled(4, 70 + read 10, w % 10)
     LED.show()
     w = w + 1
     if w > 59 gosub 19210
