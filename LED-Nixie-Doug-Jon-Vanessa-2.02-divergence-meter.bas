@@ -543,9 +543,12 @@
     p = 20
     gosub 1000
     ' flickering numbers animation
-    if z >= 200 and z <= 203 then LED.irange(0, 0, 49)
-    if z >= 240 and z <= 246 or z >= 420 and z <= 426 then LED.irange(0, 29, 79)
-    if z >= 3000 then z = 0
+    t = (((r % 6) + 2) * 10) + 9
+    if z >= 200+r and z <= 202+r or z >= 230+r and z <= 232+r or z >= 250+r and z <= 254+r then LED.irange(0, t, t+10)
+    if z >= 297+r and z <= 299+r then LED.irange(0, t, t+10)
+    'if z >= 300 and z <= 303 then LED.irange(0, 0, 79)
+    'if z >= 340 and z <= 343 or z >= 520 and z <= 523 then LED.irange(0, 0, 79)
+    if z >= 800 then z = 0
     z = z + 1
     return
 '================================================
